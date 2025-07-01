@@ -1,0 +1,105 @@
+* {
+    background-color: #0000;
+    text-color: #99a;
+    border-radius: 0em;
+    anchor: north;
+    location: north;
+    highlight: underline bold #ccc;
+}
+
+#window {
+    width: 28em;
+    y-offset: -1em;
+    padding: 0.4em 0em 0em 0em;
+    border-radius: 10px;
+}
+
+#mainbox {
+    spacing: 0.2em;
+    padding: 0.8em 0.4em 0.4em 0.4em;
+    border-radius: 10px;
+    border: 0.1em;
+    border-color: #2a2c39;
+    background-color: #17171de8;
+}
+
+#inputbar, message, listview, sidebar {
+    background-color: #0000;
+}
+
+
+
+#inputbar {
+    //children: [ textbox-prompt-colon, entry, case-indicator ];
+    children: [ entry, case-indicator ];
+}
+
+#textbox-prompt-colon, entry, case-indicator {
+    text-color: #ccc;
+    background-color: #0000;
+    border: 0.08em;
+    border-color: #2a2c39;
+    border-radius: 0.2em;
+    padding: 0.26em 0.2em 0.26em 0.2em;
+}
+
+#textbox-prompt-colon {
+    expand: false;
+    padding: 0em 0.2em 0.2em 0em;
+    str: "$>";
+}
+
+
+
+#listview {
+    lines: 6;
+}
+
+#element {
+    background-color: #0000;
+    padding: 0.2em 0.2em 0.2em 0.4em;
+}
+
+#element normal.active {
+    text-color: #ccc;
+}
+
+#element normal.urgent {
+    text-color: #d75f41;
+}
+
+#element selected {
+    background-color: #0008;
+    border: 0em 0em 0em 0.24em;
+    border-color: #8146bf;
+}
+
+#element selected.normal {
+    text-color: #38dfba;
+}
+
+#element selected.active {
+    text-color: #38dfba;
+}
+
+#element selected.urgent {
+    text-color: #d75f41;
+}
+
+
+
+#sidebar {
+    spacing: 1em;
+}
+
+#button {
+    border-color: #2a2c39;
+    border: 0em 0em 0.24em 0em;
+}
+
+#button selected {
+    background-color: #0008;
+    border-color: #8146bf;
+    border: 0em 0em 0.24em 0em;
+    text-color: #38dfba;
+}

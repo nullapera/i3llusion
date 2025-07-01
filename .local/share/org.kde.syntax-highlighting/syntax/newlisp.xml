@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language
+  version="10.7.6"
+  kateversion="2.3"
+  name="newLISP"
+  section="Scripts"
+  extensions="*.lsp"
+  mimetype="text/x-newlisp;application/x-newlisp"
+  author=""
+  license="">
+  <highlighting>
+    <list name="operators">
+      <item> &lt; </item>
+      <item> &lt;= </item>
+      <item> &gt; </item>
+      <item> &gt;= </item>
+      <item> = </item>
+      <item> != </item>
+      <item> + </item>
+      <item> ++ </item>
+      <item> - </item>
+      <item> -- </item>
+      <item> / </item>
+      <item> % </item>
+      <item> * </item>
+      <item> &amp; </item>
+      <item> ^ </item>
+      <item> ~ </item>
+      <item> &lt;&lt; </item>
+      <item> &gt;&gt; </item>
+      <item> | </item>
+      <item> ! </item>
+    </list>
+    <list name="data">
+      <item> nil </item>
+      <item> true </item>
+      <item> ostype </item>
+      <item> $ </item>
+      <item> $args </item>
+      <item> $count </item>
+      <item> $error-event </item>
+      <item> $idx </item>
+      <item> $it </item>
+      <item> $main-args </item>
+      <item> $x </item>
+    </list>
+    <list name="definitions">
+      <item> define </item>
+      <item> define-macro </item>
+      <item> lambda </item>
+      <item> lambda-macro </item>
+      <item> fn </item>
+      <item> macro </item>
+      <item> Class </item>
+      <item> Tree </item>
+      <item> MAIN </item>
+    </list>
+    <list name="functions">
+      <item> module </item>
+      <item> dump-symbol </item>
+
+      <item> while </item>
+      <item> until </item>
+      <item> do-while </item>
+      <item> do-until </item>
+      <item> dotimes </item>
+      <item> for </item>
+      <item> sequence </item>
+      <item> series </item>
+      <item> doargs </item>
+      <item> dolist </item>
+      <item> dostring </item>
+      <item> dotree </item>
+      <item> case </item>
+      <item> cond </item>
+      <item> begin </item>
+      <item> and </item>
+      <item> if </item>
+      <item> if-not </item>
+      <item> unless </item>
+      <item> when </item>
+      <item> or </item>
+      <item> quote </item>
+      <item> silent </item>
+      <item> eval </item>
+      <item> amb </item>
+      <item> catch </item>
+      <item> throw </item>
+
+      <item> apply </item>
+      <item> curry </item>
+      <item> args </item>
+      <item> map </item>
+      <item> collect </item>
+      <item> term </item>
+      <item> filter </item>
+      <item> clean </item>
+      <item> index </item>
+      <item> expand </item>
+      <item> constant </item>
+      <item> global </item>
+      <item> set </item>
+      <item> setf </item>
+      <item> setq </item>
+      <item> let </item>
+      <item> local </item>
+      <item> letn </item>
+      <item> letex </item>
+      <item> first </item>
+      <item> flat </item>
+      <item> last </item>
+      <item> rest </item>
+      <item> cons </item>
+      <item> append </item>
+      <item> extend </item>
+      <item> list </item>
+      <item> nth </item>
+      <item> ref </item>
+      <item> ref-all </item>
+      <item> set-ref </item>
+      <item> set-ref-all </item>
+      <item> select </item>
+      <item> swap </item>
+      <item> slice </item>
+      <item> length </item>
+      <item> find </item>
+      <item> search </item>
+      <item> member </item>
+      <item> intersect </item>
+      <item> difference </item>
+      <item> union </item>
+      <item> unique </item>
+      <item> assoc </item>
+      <item> lookup </item>
+      <item> count </item>
+      <item> pop-assoc </item>
+      <item> replace </item>
+      <item> sort </item>
+      <item> push </item>
+      <item> pop </item>
+      <item> reverse </item>
+      <item> rotate </item>
+      <item> dup </item>
+      <item> not </item>
+
+      <item> inc </item>
+      <item> dec </item>
+      <item> add </item>
+      <item> sub </item>
+      <item> mul </item>
+      <item> div </item>
+      <item> abs </item>
+      <item> ceil </item>
+      <item> floor </item>
+      <item> erf </item>
+      <item> sgn </item>
+      <item> sin </item>
+      <item> cos </item>
+      <item> tan </item>
+      <item> asin </item>
+      <item> acos </item>
+      <item> atan </item>
+      <item> atan2 </item>
+      <item> sinh </item>
+      <item> cosh </item>
+      <item> tanh </item>
+      <item> asinh </item>
+      <item> acosh </item>
+      <item> atanh </item>
+      <item> round </item>
+      <item> exp </item>
+      <item> log </item>
+      <item> sqrt </item>
+      <item> ssq </item>
+      <item> rand </item>
+      <item> seed </item>
+      <item> random </item>
+      <item> normal </item>
+      <item> randomize </item>
+      <item> encrypt </item>
+      <item> min </item>
+      <item> max </item>
+      <item> pow </item>
+      <item> mod </item>
+      <item> prob-z </item>
+      <item> prob-chi2 </item>
+      <item> prob-t </item>
+      <item> prob-f </item>
+      <item> crit-chi2 </item>
+      <item> crit-z </item>
+      <item> crit-t </item>
+      <item> crit-f </item>
+      <item> fft </item>
+      <item> ifft </item>
+      <item> beta </item>
+      <item> betai </item>
+      <item> gammaln </item>
+      <item> gammai </item>
+      <item> binomial </item>
+      <item> factor </item>
+      <item> pmt </item>
+      <item> pv </item>
+      <item> fv </item>
+      <item> nper </item>
+      <item> npv </item>
+      <item> irr </item>
+      <item> transpose </item>
+      <item> multiply </item>
+      <item> invert </item>
+      <item> det </item>
+      <item> mat </item>
+      <item> array </item>
+      <item> array-list </item>
+      <item> flt </item>
+      <item> bayes-train </item>
+      <item> bayes-query </item>
+      <item> unify </item>
+      <item> bind </item>
+      <item> uuid </item>
+      <item> gcd </item>
+      <item> kmeans-train </item>
+      <item> kmeans-query </item>
+      <item> stats </item>
+      <item> t-test </item>
+      <item> corr </item>
+
+      <item> eval-string </item>
+      <item> read-expr </item>
+      <item> join </item>
+      <item> chop </item>
+      <item> explode </item>
+      <item> trim </item>
+      <item> char </item>
+      <item> starts-with </item>
+      <item> ends-with </item>
+      <item> upper-case </item>
+      <item> lower-case </item>
+      <item> title-case </item>
+      <item> format </item>
+      <item> match </item>
+      <item> regex </item>
+      <item> regex-comp </item>
+      <item> bigint </item>
+      <item> int </item>
+      <item> integer </item>
+      <item> float </item>
+      <item> string </item>
+      <item> bits </item>
+      <item> get-float </item>
+      <item> get-string </item>
+      <item> get-int </item>
+      <item> get-long </item>
+      <item> get-char </item>
+      <item> sym </item>
+      <item> parse </item>
+      <item> pack </item>
+      <item> unpack </item>
+      <item> xml-parse </item>
+      <item> xml-error </item>
+      <item> xml-type-tags </item>
+      <item> json-parse </item>
+      <item> json-error </item>
+      <item> base64-enc </item>
+      <item> base64-dec </item>
+      <item> crc32 </item>
+      <item> find-all </item>
+
+      <item> unicode </item>
+      <item> utf8 </item>
+      <item> utf8len </item>
+
+      <item> pretty-print </item>
+      <item> print </item>
+      <item> println </item>
+      <item> read-line </item>
+      <item> write-line </item>
+      <item> current-line </item>
+      <item> device </item>
+      <item> load </item>
+      <item> save </item>
+      <item> source </item>
+      <item> open </item>
+      <item> close </item>
+      <item> read-char </item>
+
+      <item> read-utf8 </item>
+
+      <item> write-char </item>
+      <item> read-buffer </item>
+      <item> read </item>
+      <item> write-buffer </item>
+      <item> write </item>
+      <item> write-file </item>
+      <item> append-file </item>
+      <item> read-file </item>
+      <item> read-key </item>
+      <item> get-url </item>
+      <item> put-url </item>
+      <item> post-url </item>
+      <item> delete-url </item>
+      <item> destroy </item>
+      <item> exec </item>
+      <item> process </item>
+      <item> pipe </item>
+
+      <item> fork </item>
+      <item> wait-pid </item>
+
+      <item> spawn </item>
+      <item> sync </item>
+      <item> abort </item>
+      <item> send </item>
+      <item> receive </item>
+
+      <item> share </item>
+
+      <item> semaphore </item>
+      <item> seek </item>
+
+      <item> peek </item>
+
+      <item> set-locale </item>
+      <item> for-all </item>
+      <item> exists </item>
+      <item> symbols </item>
+      <item> exit </item>
+      <item> debug </item>
+      <item> trace </item>
+      <item> trace-highlight </item>
+      <item> reset </item>
+      <item> throw-error </item>
+      <item> error-event </item>
+      <item> history </item>
+      <item> prompt-event </item>
+      <item> command-event </item>
+      <item> xfer-event </item>
+      <item> reader-event </item>
+      <item> last-error </item>
+      <item> signal </item>
+      <item> sys-info </item>
+      <item> sys-error </item>
+      <item> file-info </item>
+      <item> copy </item>
+      <item> copy-file </item>
+      <item> rename-file </item>
+      <item> delete-file </item>
+      <item> make-dir </item>
+      <item> remove-dir </item>
+      <item> change-dir </item>
+      <item> directory </item>
+      <item> real-path </item>
+      <item> main-args </item>
+      <item> env </item>
+      <item> context </item>
+      <item> self </item>
+      <item> prefix </item>
+      <item> default </item>
+      <item> timer </item>
+
+      <item> import </item>
+      <item> callback </item>
+
+      <item> struct </item>
+
+      <item> delete </item>
+      <item> new </item>
+      <item> def-new </item>
+      <item> address </item>
+      <item> dump </item>
+      <item> cpymem </item>
+      <item> sleep </item>
+
+      <item> nil? </item>
+      <item> true? </item>
+      <item> NaN? </item>
+      <item> inf? </item>
+      <item> bigint? </item>
+      <item> integer? </item>
+      <item> float? </item>
+      <item> number? </item>
+      <item> string? </item>
+      <item> symbol? </item>
+      <item> legal? </item>
+      <item> context? </item>
+      <item> primitive? </item>
+      <item> atom? </item>
+      <item> quote? </item>
+      <item> list? </item>
+      <item> lambda? </item>
+      <item> macro? </item>
+      <item> array? </item>
+      <item> empty? </item>
+      <item> null? </item>
+      <item> zero? </item>
+      <item> file? </item>
+      <item> directory? </item>
+      <item> global? </item>
+      <item> protected? </item>
+      <item> odd? </item>
+      <item> even? </item>
+
+      <item> date </item>
+      <item> time </item>
+      <item> time-of-day </item>
+      <item> now </item>
+
+      <item> date-parse </item>
+      <item> parse-date </item>
+
+      <item> date-list </item>
+      <item> date-value </item>
+
+      <item> net-close </item>
+      <item> net-service </item>
+      <item> net-connect </item>
+      <item> net-accept </item>
+      <item> net-local </item>
+      <item> net-peer </item>
+      <item> net-ipv </item>
+      <item> net-lookup </item>
+      <item> net-receive </item>
+      <item> net-receive-from </item>
+      <item> net-receive-udp </item>
+      <item> net-send </item>
+      <item> net-send-to </item>
+      <item> net-send-udp </item>
+      <item> net-listen </item>
+
+      <item> net-packet </item>
+
+      <item> net-peek </item>
+      <item> net-select </item>
+      <item> net-sessions </item>
+      <item> net-eval </item>
+      <item> net-interface </item>
+
+      <item> net-ping </item>
+
+      <item> net-error </item>
+    </list>
+
+    <contexts>
+      <context name="Normal-Text" attribute="Normal" lineEndContext="#stay">
+        <RegExpr attribute="Comment" context="#stay" String=";.*$"/>
+        <RegExpr attribute="Comment" context="#stay" String="^#.*$"/>
+        <keyword attribute="Definition" context="#stay" String="definitions"/>
+        <RegExpr attribute="Data" context="#stay" String="\$([02-9]|1[0-5]?)"/>
+        <keyword attribute="Data" context="#stay" String="data"/>
+        <DetectChar attribute="Bracket" context="#stay" char="("/>
+        <DetectChar attribute="Bracket" context="#stay" char=")"/>
+        <keyword attribute="Function" context="#stay" String="functions"/>
+        <keyword attribute="Operator" context="#stay" String="operators"/>
+        <DetectChar attribute="Operator" context="#stay" char=":"/>
+        <DetectChar attribute="Operator" context="#stay" char="'"/>
+        <DetectChar attribute="String" context="string0" char="&quot;"/>
+        <DetectChar attribute="String" context="string1" char="{"/>
+        <StringDetect attribute="String" context="string2" String="[text]" insensitive="false"/>
+        <RegExpr attribute="Float" context="#stay" String="(?&lt;=[\s'(])[-+]?([0-9]+[eE][-+]?[0-9]+|([0-9]*\.[0-9]+|[0-9]+\.)([eE][-+]?[0-9]+)?)(?=([\s)]|$))"/>
+        <RegExpr attribute="BaseN" context="#stay" String="(?&lt;=[\s'(])0[0-7]+(?=([\s)]|$))"/>
+        <RegExpr attribute="BaseN" context="#stay" String="(?&lt;=[\s'(])0[xX][0-9a-fA-F]+(?=([\s)]|$))"/>
+        <RegExpr attribute="BaseN" context="#stay" String="(?&lt;=[\s'(])0[bB][01]+(?=([\s)]|$))"/>
+        <RegExpr attribute="Decimal" context="#stay" String="(?&lt;=[\s'(])[-+]?([1-9][0-9]*|0)[L]?(?=([\s)]|$))"/>
+      </context>
+      <context name="string0" attribute="String" lineEndContext="#pop">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="Data" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context name="string1" attribute="String" lineEndContext="#pop">
+        <LineContinue attribute="String" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="}"/>
+      </context>
+      <context name="string2" attribute="String" lineEndContext="#stay">
+        <StringDetect attribute="String" context="#pop" String="[/text]" insensitive="false"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal"/>
+      <itemData name="Function" defStyleNum="dsFunction" bold="0"/>
+      <itemData name="Operator" defStyleNum="dsOthers"/>
+      <itemData name="Data" defStyleNum="dsDataType"/>
+      <itemData name="Definition" defStyleNum="dsKeyword" bold="1"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal"/>
+      <itemData name="BaseN" defStyleNum="dsBaseN"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Bracket" defStyleNum="dsNormal"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" weakDeliminator=".:-+*?!&lt;&gt;=/%&amp;^~"/>
+    <comments>
+      <comment name="singleLine" start=";"/>
+    </comments>
+  </general>
+</language>

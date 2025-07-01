@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    syntax file for newLISP (10.7.6)
+-->
+<language id="newlisp" _name="newLISP" version="2.0" _section="Scripts">
+  <metadata>
+    <property name="mimetypes">application/x-newlisp;text/x-newlisp</property>
+    <property name="globs">*.lsp</property>
+    <property name="line-comment-start">;</property>
+  </metadata>
+
+  <styles>
+    <style id="comment" _name="Comment" map-to="def:comment"/>
+    <style id="operator" _name="Operator" map-to="def:operator"/>
+    <style id="number" _name="Number" map-to="def:number"/>
+    <style id="string" _name="String" map-to="def:string"/>
+    <style id="data" _name="Data" map-to="def:boolean"/>
+    <style id="special" _name="Special" map-to="def:operator"/>
+    <style id="keyword" _name="Keyword" map-to="def:keyword"/>
+    <style id="function" _name="Function" map-to="def:function"/>
+  </styles>
+
+  <definitions>
+    <context id="line-comment" style-ref="comment" end-at-line-end="true" class="comment" class-disabled="no-spell-check">
+      <start>;</start>
+      <include>
+        <context ref="def:in-comment"/>
+      </include>
+    </context>
+
+    <context id="operator" style-ref="operator">
+      <match extended="true">
+        (?&lt;=[\s'(])
+          (&lt; | &gt; | = | [&lt;&gt;!]= |
+          \+ | \+\+ | \- | \-\- | / | % | \* |
+          &amp; | \^ | \~ |
+          &lt;&lt; | &gt;&gt; |
+          \| | \!)
+        (?=([\s)]|$))
+      </match>
+    </context>
+
+    <context id="integer" style-ref="number">
+      <match extended="true">
+        (?&lt;=[\s'(]) [-+]? ([1-9][0-9]* | 0) [L]? (?=([\s)]|$))
+      </match>
+    </context>
+
+    <context id="octal" style-ref="number">
+      <match extended="true">
+        (?&lt;=[\s'(]) 0 [0-7]+ (?=([\s)]|$))
+      </match>
+    </context>
+
+    <context id="binary" style-ref="number">
+      <match extended="true">
+        (?&lt;=[\s'(]) 0 [bB] [01]+ (?=([\s)]|$))
+      </match>
+    </context>
+
+    <context id="hexa" style-ref="number">
+      <match extended="true">
+        (?&lt;=[\s'(]) 0 [xX] [0-9a-fA-F]+ (?=([\s)]|$))
+      </match>
+    </context>
+
+    <context id="float" style-ref="number">
+      <match extended="true">
+        (?&lt;=[\s'(])
+          [-+]?
+          ([0-9]+ [eE] [-+]? [0-9]+ |
+            ([0-9]* \. [0-9]+ | [0-9]+ \.)
+            ([eE] [-+]? [0-9]+)?)
+        (?=([\s)]|$))
+      </match>
+    </context>
+
+    <context id="string" style-ref="string" class="string" class-disabled="no-spell-check">
+      <start>(?&lt;=[\s'(])"</start>
+      <end>"(?=([\s)]|$))</end>
+      <include>
+        <context ref="def:escape"/>
+      </include>
+    </context>
+
+    <context id="string1" style-ref="string" class="string" class-disabled="no-spell-check">
+      <start>(?&lt;=[\s'(]){</start>
+      <end>}(?=([\s)]|$))</end>
+    </context>
+
+    <context id="string2" style-ref="string" class="string" class-disabled="no-spell-check">
+      <start>\[text\]</start>
+      <end>\[/text\]</end>
+      <include>
+        <context ref="cmd"/>
+      </include>
+    </context>
+
+    <context id="cmd" style-ref="string" class="string" class-disabled="no-spell-check">
+      <start>\[cmd\]</start>
+      <end>\[/cmd\]</end>
+      <include>
+        <context ref="operator"/>
+        <context ref="data"/>
+        <context ref="special"/>
+        <context ref="keyword"/>
+        <context ref="function"/>
+      </include>
+    </context>
+
+    <context id="data" style-ref="data">
+      <prefix>(?&lt;=[\s'(])</prefix>
+      <suffix>(?=([\s)]|$))</suffix>
+      <keyword>nil</keyword>
+      <keyword>true</keyword>
+      <keyword>ostype</keyword>
+      <keyword>$</keyword>
+      <keyword>$args</keyword>
+      <keyword>$count</keyword>
+      <keyword>$error-event</keyword>
+      <keyword>$idx</keyword>
+      <keyword>$it</keyword>
+      <keyword>$main-args</keyword>
+      <keyword>$x</keyword>
+    </context>
+
+    <context id="data1" style-ref="data">
+      <match extended="true">
+        (?&lt;=[\s'(])
+          (\$[0-9] | \$1[0-5])
+        (?=([\s)]|$))
+      </match>
+    </context>
+
+    <context id="special" style-ref="special">
+      <match extended="true">
+        (' | :)
+      </match>
+    </context>
+
+    <context id="keyword" style-ref="keyword">
+      <prefix>(?&lt;=[\s'(])</prefix>
+      <suffix>(?=([\s)]|$))</suffix>
+      <keyword>module</keyword>
+      <keyword>dump-symbol</keyword>
+
+      <keyword>while</keyword>
+      <keyword>until</keyword>
+      <keyword>do-while</keyword>
+      <keyword>do-until</keyword>
+      <keyword>dotimes</keyword>
+      <keyword>for</keyword>
+      <keyword>sequence</keyword>
+      <keyword>series</keyword>
+      <keyword>doargs</keyword>
+      <keyword>dolist</keyword>
+      <keyword>dostring</keyword>
+      <keyword>dotree</keyword>
+      <keyword>case</keyword>
+      <keyword>cond</keyword>
+      <keyword>begin</keyword>
+      <keyword>and</keyword>
+      <keyword>if</keyword>
+      <keyword>if-not</keyword>
+      <keyword>unless</keyword>
+      <keyword>when</keyword>
+      <keyword>or</keyword>
+      <keyword>quote</keyword>
+      <keyword>silent</keyword>
+      <keyword>eval</keyword>
+      <keyword>amb</keyword>
+      <keyword>catch</keyword>
+      <keyword>throw</keyword>
+
+      <keyword>apply</keyword>
+      <keyword>curry</keyword>
+      <keyword>args</keyword>
+      <keyword>map</keyword>
+      <keyword>collect</keyword>
+      <keyword>term</keyword>
+      <keyword>filter</keyword>
+      <keyword>clean</keyword>
+      <keyword>index</keyword>
+      <keyword>expand</keyword>
+      <keyword>constant</keyword>
+      <keyword>global</keyword>
+      <keyword>set</keyword>
+      <keyword>setf</keyword>
+      <keyword>setq</keyword>
+      <keyword>let</keyword>
+      <keyword>local</keyword>
+      <keyword>letn</keyword>
+      <keyword>letex</keyword>
+      <keyword>first</keyword>
+      <keyword>flat</keyword>
+      <keyword>last</keyword>
+      <keyword>rest</keyword>
+      <keyword>cons</keyword>
+      <keyword>append</keyword>
+      <keyword>extend</keyword>
+      <keyword>list</keyword>
+      <keyword>nth</keyword>
+      <keyword>ref</keyword>
+      <keyword>ref-all</keyword>
+      <keyword>set-ref</keyword>
+      <keyword>set-ref-all</keyword>
+      <keyword>select</keyword>
+      <keyword>swap</keyword>
+      <keyword>slice</keyword>
+      <keyword>length</keyword>
+      <keyword>find</keyword>
+      <keyword>search</keyword>
+      <keyword>member</keyword>
+      <keyword>intersect</keyword>
+      <keyword>difference</keyword>
+      <keyword>union</keyword>
+      <keyword>unique</keyword>
+      <keyword>assoc</keyword>
+      <keyword>lookup</keyword>
+      <keyword>count</keyword>
+      <keyword>pop-assoc</keyword>
+      <keyword>replace</keyword>
+      <keyword>sort</keyword>
+      <keyword>push</keyword>
+      <keyword>pop</keyword>
+      <keyword>reverse</keyword>
+      <keyword>rotate</keyword>
+      <keyword>dup</keyword>
+      <keyword>not</keyword>
+
+      <keyword>inc</keyword>
+      <keyword>dec</keyword>
+      <keyword>add</keyword>
+      <keyword>sub</keyword>
+      <keyword>mul</keyword>
+      <keyword>div</keyword>
+      <keyword>abs</keyword>
+      <keyword>ceil</keyword>
+      <keyword>floor</keyword>
+      <keyword>erf</keyword>
+      <keyword>sgn</keyword>
+      <keyword>sin</keyword>
+      <keyword>cos</keyword>
+      <keyword>tan</keyword>
+      <keyword>asin</keyword>
+      <keyword>acos</keyword>
+      <keyword>atan</keyword>
+      <keyword>atan2</keyword>
+      <keyword>sinh</keyword>
+      <keyword>cosh</keyword>
+      <keyword>tanh</keyword>
+      <keyword>asinh</keyword>
+      <keyword>acosh</keyword>
+      <keyword>atanh</keyword>
+      <keyword>round</keyword>
+      <keyword>exp</keyword>
+      <keyword>log</keyword>
+      <keyword>sqrt</keyword>
+      <keyword>ssq</keyword>
+      <keyword>rand</keyword>
+      <keyword>seed</keyword>
+      <keyword>random</keyword>
+      <keyword>normal</keyword>
+      <keyword>randomize</keyword>
+      <keyword>encrypt</keyword>
+      <keyword>min</keyword>
+      <keyword>max</keyword>
+      <keyword>pow</keyword>
+      <keyword>mod</keyword>
+      <keyword>prob-z</keyword>
+      <keyword>prob-chi2</keyword>
+      <keyword>prob-t</keyword>
+      <keyword>prob-f</keyword>
+      <keyword>crit-chi2</keyword>
+      <keyword>crit-z</keyword>
+      <keyword>crit-t</keyword>
+      <keyword>crit-f</keyword>
+      <keyword>fft</keyword>
+      <keyword>ifft</keyword>
+      <keyword>beta</keyword>
+      <keyword>betai</keyword>
+      <keyword>gammaln</keyword>
+      <keyword>gammai</keyword>
+      <keyword>binomial</keyword>
+      <keyword>factor</keyword>
+      <keyword>pmt</keyword>
+      <keyword>pv</keyword>
+      <keyword>fv</keyword>
+      <keyword>nper</keyword>
+      <keyword>npv</keyword>
+      <keyword>irr</keyword>
+      <keyword>transpose</keyword>
+      <keyword>multiply</keyword>
+      <keyword>invert</keyword>
+      <keyword>det</keyword>
+      <keyword>mat</keyword>
+      <keyword>array</keyword>
+      <keyword>array-list</keyword>
+      <keyword>flt</keyword>
+      <keyword>bayes-train</keyword>
+      <keyword>bayes-query</keyword>
+      <keyword>unify</keyword>
+      <keyword>bind</keyword>
+      <keyword>uuid</keyword>
+      <keyword>gcd</keyword>
+      <keyword>kmeans-train</keyword>
+      <keyword>kmeans-query</keyword>
+      <keyword>stats</keyword>
+      <keyword>t-test</keyword>
+      <keyword>corr</keyword>
+
+      <keyword>eval-string</keyword>
+      <keyword>read-expr</keyword>
+      <keyword>join</keyword>
+      <keyword>chop</keyword>
+      <keyword>explode</keyword>
+      <keyword>trim</keyword>
+      <keyword>char</keyword>
+      <keyword>starts-with</keyword>
+      <keyword>ends-with</keyword>
+      <keyword>upper-case</keyword>
+      <keyword>lower-case</keyword>
+      <keyword>title-case</keyword>
+      <keyword>format</keyword>
+      <keyword>match</keyword>
+      <keyword>regex</keyword>
+      <keyword>regex-comp</keyword>
+      <keyword>bigint</keyword>
+      <keyword>int</keyword>
+      <keyword>integer</keyword>
+      <keyword>float</keyword>
+      <keyword>string</keyword>
+      <keyword>bits</keyword>
+      <keyword>get-float</keyword>
+      <keyword>get-string</keyword>
+      <keyword>get-int</keyword>
+      <keyword>get-long</keyword>
+      <keyword>get-char</keyword>
+      <keyword>sym</keyword>
+      <keyword>parse</keyword>
+      <keyword>pack</keyword>
+      <keyword>unpack</keyword>
+      <keyword>xml-parse</keyword>
+      <keyword>xml-error</keyword>
+      <keyword>xml-type-tags</keyword>
+      <keyword>json-parse</keyword>
+      <keyword>json-error</keyword>
+      <keyword>base64-enc</keyword>
+      <keyword>base64-dec</keyword>
+      <keyword>crc32</keyword>
+      <keyword>find-all</keyword>
+
+      <keyword>unicode</keyword>
+      <keyword>utf8</keyword>
+      <keyword>utf8len</keyword>
+
+      <keyword>pretty-print</keyword>
+      <keyword>print</keyword>
+      <keyword>println</keyword>
+      <keyword>read-line</keyword>
+      <keyword>write-line</keyword>
+      <keyword>current-line</keyword>
+      <keyword>device</keyword>
+      <keyword>load</keyword>
+      <keyword>save</keyword>
+      <keyword>source</keyword>
+      <keyword>open</keyword>
+      <keyword>close</keyword>
+      <keyword>read-char</keyword>
+
+      <keyword>read-utf8</keyword>
+
+      <keyword>write-char</keyword>
+      <keyword>read-buffer</keyword>
+      <keyword>read</keyword>
+      <keyword>write-buffer</keyword>
+      <keyword>write</keyword>
+      <keyword>write-file</keyword>
+      <keyword>append-file</keyword>
+      <keyword>read-file</keyword>
+      <keyword>read-key</keyword>
+      <keyword>get-url</keyword>
+      <keyword>put-url</keyword>
+      <keyword>post-url</keyword>
+      <keyword>delete-url</keyword>
+      <keyword>destroy</keyword>
+      <keyword>exec</keyword>
+      <keyword>process</keyword>
+      <keyword>pipe</keyword>
+
+      <keyword>fork</keyword>
+      <keyword>wait-pid</keyword>
+
+      <keyword>spawn</keyword>
+      <keyword>sync</keyword>
+      <keyword>abort</keyword>
+      <keyword>send</keyword>
+      <keyword>receive</keyword>
+
+      <keyword>share</keyword>
+
+      <keyword>semaphore</keyword>
+      <keyword>seek</keyword>
+
+      <keyword>peek</keyword>
+
+      <keyword>set-locale</keyword>
+      <keyword>for-all</keyword>
+      <keyword>exists</keyword>
+      <keyword>symbols</keyword>
+      <keyword>exit</keyword>
+      <keyword>debug</keyword>
+      <keyword>trace</keyword>
+      <keyword>trace-highlight</keyword>
+      <keyword>reset</keyword>
+      <keyword>throw-error</keyword>
+      <keyword>error-event</keyword>
+      <keyword>history</keyword>
+      <keyword>prompt-event</keyword>
+      <keyword>command-event</keyword>
+      <keyword>xfer-event</keyword>
+      <keyword>reader-event</keyword>
+      <keyword>last-error</keyword>
+      <keyword>signal</keyword>
+      <keyword>sys-info</keyword>
+      <keyword>sys-error</keyword>
+      <keyword>file-info</keyword>
+      <keyword>copy</keyword>
+      <keyword>copy-file</keyword>
+      <keyword>rename-file</keyword>
+      <keyword>delete-file</keyword>
+      <keyword>make-dir</keyword>
+      <keyword>remove-dir</keyword>
+      <keyword>change-dir</keyword>
+      <keyword>directory</keyword>
+      <keyword>real-path</keyword>
+      <keyword>main-args</keyword>
+      <keyword>env</keyword>
+      <keyword>context</keyword>
+      <keyword>self</keyword>
+      <keyword>prefix</keyword>
+      <keyword>default</keyword>
+      <keyword>timer</keyword>
+
+      <keyword>import</keyword>
+      <keyword>callback</keyword>
+
+      <keyword>struct</keyword>
+
+      <keyword>delete</keyword>
+      <keyword>new</keyword>
+      <keyword>def-new</keyword>
+      <keyword>address</keyword>
+      <keyword>dump</keyword>
+      <keyword>cpymem</keyword>
+      <keyword>sleep</keyword>
+
+      <keyword>nil\?</keyword>
+      <keyword>true\?</keyword>
+      <keyword>NaN\?</keyword>
+      <keyword>inf\?</keyword>
+      <keyword>bigint\?</keyword>
+      <keyword>integer\?</keyword>
+      <keyword>float\?</keyword>
+      <keyword>number\?</keyword>
+      <keyword>string\?</keyword>
+      <keyword>symbol\?</keyword>
+      <keyword>legal\?</keyword>
+      <keyword>context\?</keyword>
+      <keyword>primitive\?</keyword>
+      <keyword>atom\?</keyword>
+      <keyword>quote\?</keyword>
+      <keyword>list\?</keyword>
+      <keyword>lambda\?</keyword>
+      <keyword>macro\?</keyword>
+      <keyword>array\?</keyword>
+      <keyword>empty\?</keyword>
+      <keyword>null\?</keyword>
+      <keyword>zero\?</keyword>
+      <keyword>file\?</keyword>
+      <keyword>directory\?</keyword>
+      <keyword>global\?</keyword>
+      <keyword>protected\?</keyword>
+      <keyword>odd\?</keyword>
+      <keyword>even\?</keyword>
+
+      <keyword>date</keyword>
+      <keyword>time</keyword>
+      <keyword>time-of-day</keyword>
+      <keyword>now</keyword>
+
+      <keyword>date-parse</keyword>
+      <keyword>parse-date</keyword>
+
+      <keyword>date-list</keyword>
+      <keyword>date-value</keyword>
+
+      <keyword>net-close</keyword>
+      <keyword>net-service</keyword>
+      <keyword>net-connect</keyword>
+      <keyword>net-accept</keyword>
+      <keyword>net-local</keyword>
+      <keyword>net-peer</keyword>
+      <keyword>net-ipv</keyword>
+      <keyword>net-lookup</keyword>
+      <keyword>net-receive</keyword>
+      <keyword>net-receive-from</keyword>
+      <keyword>net-receive-udp</keyword>
+      <keyword>net-send</keyword>
+      <keyword>net-send-to</keyword>
+      <keyword>net-send-udp</keyword>
+      <keyword>net-listen</keyword>
+
+      <keyword>net-packet</keyword>
+
+      <keyword>net-peek</keyword>
+      <keyword>net-select</keyword>
+      <keyword>net-sessions</keyword>
+      <keyword>net-eval</keyword>
+      <keyword>net-interface</keyword>
+
+      <keyword>net-ping</keyword>
+
+      <keyword>net-error</keyword>
+
+    </context>
+
+    <context id="function" style-ref="function">
+      <prefix>(?&lt;=[\s'(])</prefix>
+      <suffix>(?=([\s)]|$))</suffix>
+      <keyword>define</keyword>
+      <keyword>define-macro</keyword>
+      <keyword>lambda</keyword>
+      <keyword>lambda-macro</keyword>
+      <keyword>fn</keyword>
+      <keyword>macro</keyword>
+      <keyword>Class</keyword>
+      <keyword>Tree</keyword>
+      <keyword>MAIN</keyword>
+    </context>
+
+    <context id="newlisp" class="no-spell-check">
+      <include>
+        <context ref="def:shebang"/>
+        <context ref="def:shell-like-comment"/>
+        <context ref="line-comment"/>
+        <context ref="operator"/>
+        <context ref="integer"/>
+        <context ref="octal"/>
+        <context ref="binary"/>
+        <context ref="hexa"/>
+        <context ref="float"/>
+        <context ref="string"/>
+        <context ref="string1"/>
+        <context ref="string2"/>
+        <context ref="cmd"/>
+        <context ref="data"/>
+        <context ref="data1"/>
+        <context ref="special"/>
+        <context ref="keyword"/>
+        <context ref="function"/>
+      </include>
+    </context>
+
+  </definitions>
+</language>
