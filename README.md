@@ -8,13 +8,13 @@
 * need some configuration editing.
 
 ## screenshots
-* folded statuses(letters) on polybar
+* folded statuses/letters on polybar
 ![folded](folded.png)
 * unfolded statuses on polybar
 ![unfolded](unfolded.png)
 
-## control by mouse in generally
+## control statuses/letters by mouse in generally
 * button-1: toggle functionality
-* button-2: set to default or extra functionallity
+* button-2: set to default or extra functionality
 * button-3: toggle folding/unfolding
 * button-4,5/wheel: adjust value
