@@ -46,7 +46,10 @@
   (send msgtype msg)
   (receive))
 
-(define (command id cmd)
+(define (command cmd)
+  (chat COMMAND cmd))
+
+(define (command-wid id cmd)
   (chat COMMAND (format CMDFMT id cmd)))
 
 (define (subscribe msg)

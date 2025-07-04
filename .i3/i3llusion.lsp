@@ -243,26 +243,28 @@
     x (ref '("focused" true) json match)
     focused (json (slice x 0 -1))
     )
-    (when (= (lookup "type" focused) "con") (let (
-      fwid (lookup "window" focused)
-      ffon (ends-with (lookup "floating" focused) "on")
-      )
-      (setq lst (clean (curry = fwid) lst)
-            scratcheds (difference scratcheds (difference scratcheds lst))
-            x (difference lst scratcheds))
-      (when lst
-        (if x
-          (setq x (first x))
-          (setq x (first lst)
-                scratcheds '()))
-        (push fwid scratcheds -1)
-        (:command ipc fwid (string "swap container with id " x))
-        (:command ipc x
-          (if ffon
-            "border normal 6, floating enable"
-            "border none, floating disable"))
-        (when ffon
-          (:run& xprop (string x))))))))))
+    (if (= (lookup "type" focused) "con")
+      (let (
+        fwid (lookup "window" focused)
+        ffon (ends-with (lookup "floating" focused) "on")
+        )
+        (setq lst (clean (curry = fwid) lst)
+              scratcheds (difference scratcheds (difference scratcheds lst))
+              x (difference lst scratcheds))
+        (when lst
+          (if x
+            (setq x (first x))
+            (setq x (first lst)
+                  scratcheds '()))
+          (push fwid scratcheds -1)
+          (:command-wid ipc fwid (string "swap container with id " x))
+          (:command-wid ipc x
+            (if ffon
+              "border normal 6, floating enable"
+              "border none, floating disable"))
+          (when ffon
+            (:run& xprop (string x)))))
+      (:command ipc "scratchpad show"))))))
 
 (define (lettershop stamp) (local (
   flag
@@ -376,13 +378,13 @@
 (define (on-floating)
   (if (or (= BoX:_window_type "normal")
           (= BoX:_window_type "unknown"))
-    (:command ipc BoX:_window
+    (:command-wid ipc BoX:_window
       (if (ends-with BoX:_floating "on")
         (append "border normal 6, " (go2position))
         "border none"))
     (when (and (= (:at P:cycle) "upside")
                (ends-with BoX:_floating "on"))
-      (:command ipc BoX:_window (go2position 0.1)))))
+      (:command-wid ipc BoX:_window (go2position 0.1)))))
 
 (define (on-new)
   (when (or (= BoX:_window_type "normal")
@@ -394,13 +396,13 @@
       )
       (case-match (r (list (:n M:flx 1) (:n M:flx 2) fnd) r)
         ('(1 1 true)
-          (:command ipc BoX:_window "floating disable"))
+          (:command-wid ipc BoX:_window "floating disable"))
         ('(0 1 true)
-          (:command ipc BoX:_window "floating enable"))
+          (:command-wid ipc BoX:_window "floating enable"))
         ('(1 ? ?)
-          (:command ipc BoX:_window "floating enable"))
+          (:command-wid ipc BoX:_window "floating enable"))
         ('(*)
-          (:command ipc BoX:_window
+          (:command-wid ipc BoX:_window
             (if (check-wcwi)
               "floating enable"
               "floating disable")))))))
