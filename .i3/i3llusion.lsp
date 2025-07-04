@@ -231,37 +231,38 @@
   (letters2polybar)
   (timer 'remit 360))
 
-(define (propeller) (letn (
+(define (propeller) (let (
+  lst '()
   json (json-parse (:gettree ipc))
-  x (ref '("focused" true) json match)
-  focused (json (slice x 0 -1))
   )
-  (when (= (lookup "type" focused) "con") (let (
-    lst '()
+  (dolist (e (ref-all '("scratchpad_state" ?) json match))
+    (when (!= (json (append e '(1))) "none")
+      (setq x (first (lookup "nodes" (json (slice e 0 -1)))))
+      (push (lookup "window" x) lst -1)))
+  (when lst (letn (
+    x (ref '("focused" true) json match)
+    focused (json (slice x 0 -1))
     )
-    (dolist (e (ref-all '("scratchpad_state" ?) json match))
-      (when (!= (json (append e '(1))) "none")
-        (setq x (first (lookup "nodes" (json (slice e 0 -1)))))
-        (push (lookup "window" x) lst -1)))
-    (when lst (let (
+    (when (= (lookup "type" focused) "con") (let (
       fwid (lookup "window" focused)
       ffon (ends-with (lookup "floating" focused) "on")
       )
       (setq lst (clean (curry = fwid) lst)
             scratcheds (difference scratcheds (difference scratcheds lst))
             x (difference lst scratcheds))
-      (if x
-        (setq x (first x))
-        (setq x (first lst)
-              scratcheds '()))
-      (push fwid scratcheds -1)
-      (:command ipc fwid (string "swap container with id " x))
-      (:command ipc x
-        (if ffon
-          "border normal 6, floating enable"
-          "border none, floating disable"))
-      (when ffon
-        (:run& xprop (string x)))))))))
+      (when lst
+        (if x
+          (setq x (first x))
+          (setq x (first lst)
+                scratcheds '()))
+        (push fwid scratcheds -1)
+        (:command ipc fwid (string "swap container with id " x))
+        (:command ipc x
+          (if ffon
+            "border normal 6, floating enable"
+            "border none, floating disable"))
+        (when ffon
+          (:run& xprop (string x))))))))))
 
 (define (lettershop stamp) (local (
   flag
@@ -348,7 +349,7 @@
   json (json-parse (:gettree ipc))
   )
   (dolist (e (ref-all '("window_properties" ?) json match true) flag)
-    (setq flag (and (= PRoP:_class (lookup "class" (e 0)))
+    (setq flag (and (= PRoP:_class (lookup "class" (e 1)))
                     (!= PRoP:_instance (lookup "instance" (e 1))))))))
 
 (define (on-close)
