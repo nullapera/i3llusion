@@ -232,6 +232,7 @@
   (timer 'remit 360))
 
 (define (propeller) (let (
+  x nil
   lst '()
   json (json-parse (:gettree ipc))
   )
@@ -239,14 +240,13 @@
     (when (!= (json (append e '(1))) "none")
       (setq x (first (lookup "nodes" (json (slice e 0 -1)))))
       (push (lookup "window" x) lst -1)))
-  (when lst (letn (
-    x (ref '("focused" true) json match)
-    focused (json (slice x 0 -1))
+  (when lst (let (
+    fcsd (json (slice (ref '("focused" true) json match) 0 -1))
     )
-    (if (= (lookup "type" focused) "con")
+    (if (= (lookup "type" fcsd) "con")
       (let (
-        fwid (lookup "window" focused)
-        ffon (ends-with (lookup "floating" focused) "on")
+        fwid (lookup "window" fcsd)
+        ffon (ends-with (lookup "floating" fcsd) "on")
         )
         (setq lst (clean (curry = fwid) lst)
               scratcheds (difference scratcheds (difference scratcheds lst))
@@ -330,12 +330,12 @@
   flag))
 
 (define (go2position (lt1 0))
-  (ReCT BoX:_rect)
   (append "move position "
     (if (= (:at P:cycle) "upside")
       (let (
         yo (mul P:height lt1)
         )
+        (ReCT BoX:_rect)
         (format {%d px %d px}
           ReCT:_x
           (if
