@@ -176,7 +176,7 @@
     (<= Z:remtime)
     (systemctl (:at Z:cycle))
     (<= Z:remtime 0.2)
-    (:run& notify {critical}
+    (:run notify {critical}
       (append "'snooZe: Close to " (:at Z:cycle) "!'"))))
 
 (define (post-outs) (let (
@@ -188,11 +188,11 @@
   )
   (unless (:write-file i3memo (string M:memo))
     (setq flag nil)
-    (:run& notify {critical}
+    (:run notify {critical}
       (append "'post-outs: Can not write to " (:path i3memo) "!'")))
   (unless (:write-file i3cond (join (map string lst) "\n"))
     (setq flag nil)
-    (:run& notify {critical}
+    (:run notify {critical}
       (append "'post-outs: Can not write to " (:path i3cond) "!'")))))
 
 (define (post-ins) (local (
@@ -201,7 +201,7 @@
   (when (:file? i3memo)
     (if (setq data (:read-file i3memo))
       (setq M:memo (read-expr data))
-      (:run& notify {critical}
+      (:run notify {critical}
         (append "'post-ins: Can not read from " (:path i3memo) "!'"))))
   (when (:file? i3cond)
     (if (setq data (:read-file i3cond))
@@ -213,14 +213,14 @@
         (:set-to M:cycle (setf (nth 3 (:to-nums M:flx)) 1))
         (:at P:cycle (int (lst 5)))
         (when (:b N:flx 0)
-          (:run& N:manual (string (:value! N:slider (int (lst 6))))))
+          (:run N:manual (string (:value! N:slider (int (lst 6))))))
         (when (:b C:flx 1)
-          (:run& C:on))
+          (:run C:on))
         (:value! Z:slider (int (lst 7)))
         (when (:b Z:flx 1)
-          (:run& Z:on))
+          (:run Z:on))
         (:at Z:cycle (int (lst 8))))
-      (:run& notify {critical}
+      (:run notify {critical}
         (append "'post-ins: Can not read from " (:path i3cond) "!'"))))))
 
 (define (remit)
@@ -263,7 +263,7 @@
               "border normal 6, floating enable"
               "border none, floating disable"))
           (when ffon
-            (:run& xprop (string x)))))
+            (:run xprop (string x)))))
       (:command ipc "scratchpad show"))))))
 
 (define (lettershop stamp) (local (
@@ -288,7 +288,7 @@
       (:flag N:flx 0 nil)
       (if (:not! N:flx 1)
         (kelvinize)
-        (:run& N:off)))
+        (:run N:off)))
     ('("N" ? "2")
       (when (:b N:flx 0)
         (kelvinize)
@@ -296,13 +296,13 @@
     ('("N" ? "3") (:not! N:flx 3))
     ('("N" "b" "4")
       (:flag N:flx 0 true)
-      (:run& N:manual (string (:step N:slider +1))))
+      (:run N:manual (string (:step N:slider +1))))
     ('("N" "b" "5")
       (:flag N:flx 0 true)
-      (:run& N:manual (string (:step N:slider -1))))
-    ('("C" "1") (:run& (if (:not! C:flx 1) C:on C:off)))
+      (:run N:manual (string (:step N:slider -1))))
+    ('("C" "1") (:run (if (:not! C:flx 1) C:on C:off)))
     ('("C" "3") (:not! C:flx 3))
-    ('("Z" ? "1") (:run& (if (:not! Z:flx 1) Z:on Z:off)))
+    ('("Z" ? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
     ('("Z" ? "2")
       (setq Z:date-value0 (date-value))
       (timer 'remit 360)
@@ -323,7 +323,7 @@
     ('("X" "8") (setq flag true))
     ('("X" "postouts")
       (when (post-outs)
-        (:run& notify {normal} "'post-outs: saved by request!'")))
+        (:run notify {normal} "'post-outs: saved by request!'")))
     ('("X" "propeller") (propeller))
     ('("X" "polytoggle") (on-workspace-focus))
     ('("X" ?) (systemctl (first r))))
@@ -370,9 +370,9 @@
 (define (on-fullscreen)
   (when (:b Z:flx 1)
     (case-match (r (cons BoX:_fullscreen_mode Z:fullscreen_mode) r)
-      ('(1 0) (:run& Z:off)
+      ('(1 0) (:run Z:off)
               (setq Z:fullscreen_mode 1))
-      ('(0 1) (:run& Z:on)
+      ('(0 1) (:run Z:on)
               (setq Z:fullscreen_mode 0)))))
 
 (define (on-floating)
@@ -415,7 +415,7 @@
     (on-new)
     (on-floating)
     (when (ends-with BoX:_floating "on")
-      (:run& xprop (string BoX:_window))))))
+      (:run xprop (string BoX:_window))))))
 
 (define (on-workspace-focus) (letn (
   json (json-parse (:getworkspaces ipc))
@@ -429,8 +429,8 @@
 (local (
   flag data json
   )
-  (:run& C:off)
-  (:run& Z:off)
+  (:run C:off)
+  (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})
   (post-ins)
   (remit)

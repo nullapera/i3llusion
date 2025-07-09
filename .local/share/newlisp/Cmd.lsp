@@ -35,9 +35,3 @@
 
 (define (run)
   (exec (splat dry-run (args))))
-
-(define (run&)
-  (exec (append (splat dry-run (args)) " &")))
-
-(define (run&disown)
-  (exec (append (splat dry-run (args)) " & disown")))

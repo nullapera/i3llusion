@@ -35,11 +35,3 @@
 
 (define (run)
   (map exec (splat dry-run (args))))
-
-(define (run&)
-  (map (fn (a) (exec (append a " &")))
-       (splat dry-run (args))))
-
-(define (run&disown)
-  (map (fn (a) (exec (append a " & disown")))
-       (splat dry-run (args))))
