@@ -28,8 +28,7 @@
         (args)))
 
 (define (dry-run)
-  (map (fn (cmd lst)
-          (eval (append '(: Cmd:dry-run cmd) (if lst (quote lst) '()))))
+  (map (fn (cmd (lst '())) (: Cmd:dry-run cmd lst))
        (self .CMDS)
        (args)))
 
