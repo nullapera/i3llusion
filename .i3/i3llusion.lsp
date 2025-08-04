@@ -266,6 +266,23 @@
             (:run xprop (string x)))))
       (:command ipc "scratchpad show"))))))
 
+(define (toggle-memo) (letn (
+  json (json-parse (:gettree ipc))
+  fcsd (json (slice (ref '("focused"  true) json match) 0 -1))
+  )
+  (when (= (lookup "type" fcsd) "con")
+    (BoX fcsd)
+    (PRoP BoX:_window_properties)
+    (letn (
+      rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
+      idx (find rec M:memo)
+      )
+      (case-match (r (list (:n M:flx 1) (true? idx) BoX:_floating) r)
+        ('(1 true "user_on") (pop M:memo idx))
+        ('(1 nil "user_off") (push rec M:memo))
+        ('(0 true "user_off") (pop M:memo idx))
+        ('(0 nil "user_on") (push rec M:memo)))))))
+
 (define (lettershop stamp) (local (
   flag
   )
@@ -326,6 +343,7 @@
         (:run notify {normal} "'post-outs: saved by request!'")))
     ('("X" "propeller") (propeller))
     ('("X" "polytoggle") (on-workspace-focus))
+    ('("X" "togglememo") (toggle-memo))
     ('("X" ?) (systemctl (first r))))
   flag))
 
@@ -353,19 +371,6 @@
   (dolist (e (ref-all '("window_properties" ?) json match true) flag)
     (setq flag (and (= PRoP:_class (lookup "class" (e 1)))
                     (!= PRoP:_instance (lookup "instance" (e 1))))))))
-
-(define (on-close)
-  (when (:b M:flx 2)
-    (PRoP BoX:_window_properties)
-    (letn (
-      rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
-      idx (find rec M:memo)
-      )
-      (case-match (r (list (:n M:flx 1) (true? idx) BoX:_floating) r)
-        ('(1 true "user_on") (pop M:memo idx))
-        ('(1 nil "user_off") (push rec M:memo -1))
-        ('(0 true "user_off") (pop M:memo idx))
-        ('(0 nil "user_on") (push rec M:memo -1))))))
 
 (define (on-fullscreen)
   (when (:b Z:flx 1)
@@ -451,7 +456,6 @@
           ("focus" (on-fullscreen))
           ("new" (on-new))
           ("floating" (on-floating))
-          ("close" (on-close))
           ("move" (on-move))
           ("fullscreen_mode" (on-fullscreen))))
       (when (setq data  (lookup "current" json))
