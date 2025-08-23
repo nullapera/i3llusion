@@ -41,8 +41,13 @@
   scratcheds '()
   ipc (i3ipc i3sock)
   ipc4sub (i3ipc i3sock)
-  colors (Cycle (map (fn (a) (join (cons "#" a)))
-                     (permutations 3 '("8" "a" "c" "f"))))
+  colors (let (
+    rslt (Cycle (map
+      (fn (a) (join (cons "#" a)))
+      (permutations 3 '("8" "a" "c" "f"))))
+    )
+    (delete 'permutations)
+    rslt)
   i3path (Path (append (real-path) "/"))
   i3memo (:with-filename! (copy i3path) (append myname "-memo.dat"))
   i3cond (:with-filename! (copy i3path) (append myname "-cond.dat"))
