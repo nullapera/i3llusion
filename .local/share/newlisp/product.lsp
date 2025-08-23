@@ -8,7 +8,7 @@
 (context 'product)
 
 (define (product:product lst) (let (
-  lst (clean empty? (map (fn (a) (if (list? a) a (list a))) lst))
+  lst (replace '() (map (fn (a) (if (list? a) a (list a))) lst))
   )
   (when lst
     (let (

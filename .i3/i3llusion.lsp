@@ -31,7 +31,7 @@
     (int (first (parse $it)))
     find)
   )
-  (map destroy (clean (curry = selfpid) pids))
+  (map destroy (replace selfpid pids))
   (when (:file? i3ipcpath)
     (unless (:delete-file i3ipcpath)
       (throw-error (append "Can not be deleted! : '"
@@ -248,7 +248,7 @@
         fwid (lookup "window" fcsd)
         ffon (ends-with (lookup "floating" fcsd) "on")
         )
-        (setq lst (clean (curry = fwid) lst)
+        (setq lst (replace fwid lst)
               scratcheds (difference scratcheds (difference scratcheds lst))
               x (difference lst scratcheds))
         (when lst
