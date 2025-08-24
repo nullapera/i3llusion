@@ -14,21 +14,22 @@
 
 (constant
   '.CMD 1
-  '.ARGS 2)
+  '.ARGS 2
+  '.LENGTH 3)
 
 (define (Cmd:Cmd apath)
   (list (context)
         (if (isa apath MAIN:Path) (:path apath) apath)
-        (args)))
+        (args)
+        (length (args))))
 
 (define (dry-run) (let (
-  la (length (self .ARGS))
-  lb (length (args))
+  lngth (length (args))
   )
   (join (cons (self .CMD) (map string (flat
     (map list
-      (if (< la lb)
-        (append (self .ARGS) (dup '() (- lb la)))
+      (if (< (self .LENGTH) lngth)
+        (append (self .ARGS) (dup '() (- lngth (self .LENGTH))))
         (self .ARGS))
       (args)))))
     " ")))
