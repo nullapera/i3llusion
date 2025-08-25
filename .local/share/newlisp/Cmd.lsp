@@ -8,31 +8,23 @@
 ;;  (:run (Cmd "/path/cmd" (a1 a2) (a3 a4)) (b1 b2) (b3 b4)) =>
 ;;    (exec "/path/cmd a1 a2 b1 b2 a3 a4 b3 b4")
 ;;
-(require "isa" "splat")
+(require "isa" "splat" "mesh")
 
 (context 'Cmd)
 
 (constant
   '.CMD 1
-  '.ARGS 2
-  '.LENGTH 3)
+  '.ARGS 2)
 
 (define (Cmd:Cmd apath)
   (list (context)
         (if (isa apath MAIN:Path) (:path apath) apath)
-        (args)
-        (length (args))))
+        (args)))
 
-(define (dry-run) (let (
-  lngth (length (args))
-  )
-  (join (cons (self .CMD) (map string (flat
-    (map list
-      (if (< (self .LENGTH) lngth)
-        (append (self .ARGS) (dup '() (- lngth (self .LENGTH))))
-        (self .ARGS))
-      (args)))))
-    " ")))
+(define (dry-run)
+  (join (cons (self .CMD)
+              (map string (flat (mesh (self .ARGS) (args)))))
+        " "))
 
 (define (run)
   (exec (splat dry-run (args))))
