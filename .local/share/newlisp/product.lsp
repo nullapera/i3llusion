@@ -2,21 +2,20 @@
 ;;
 ;;  (require "product")
 ;;
-;;  (product '((0 1) (0 1) (0 1))) =>
+;;  (product '(0 1) '(0 1) '(0 1)) =>
 ;;    ((0 0 0) (0 0 1) (0 1 0) (0 1 1) (1 0 0) (1 0 1) (1 1 0) (1 1 1))
 ;;
 (context 'product)
 
-(define (product:product lst) (let (
-  lst (replace '() (map (fn (a) (if (list? a) a (list a))) lst))
+(define (product:product) (let (
+  lst (replace '() (map (fn (a) (if (list? a) a (list a))) (args)))
   )
-  (when lst
-    (let (
-      prod (lambda (lstA lstB) (let (
-        rslt '()
-        )
-        (dolist (a lstA)
-          (dolist (b lstB)
-            (push (push b (copy a) -1) rslt -1)))))
+  (when lst (let (
+    prod (lambda (lstA lstB) (let (
+      rslt '()
       )
-      (apply prod (push '(()) lst) 2)))))
+      (dolist (a lstA)
+        (dolist (b lstB)
+          (push (push b (copy a) -1) rslt -1)))))
+    )
+    (apply prod (push '(()) lst) 2)))))
