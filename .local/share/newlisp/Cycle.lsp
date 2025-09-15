@@ -17,19 +17,20 @@
 
 (constant
   '.INDEX 1
-  '.LIST 2)
+  '.LIST 2
+  '.LENGTH 3)
 
 (define (Cycle:Cycle lst)
-  (list (context) 0 lst))
+  (list (context) 0 lst (length lst)))
 
 (define (Cycle:index)
   (self .INDEX))
 
 (define (at newindex)
   (unless (nil? newindex) (let (
-    x (% newindex (length (self .LIST)))
+    x (% newindex (self .LENGTH))
     )
-    (setf (self .INDEX) (if (< x) (+ (length (self .LIST)) x) x))))
+    (setf (self .INDEX) (if (< x) (+ (self .LENGTH) x) x))))
   (nth (self .INDEX) (self .LIST)))
 
 (define (step n)

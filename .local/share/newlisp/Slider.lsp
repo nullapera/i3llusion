@@ -27,12 +27,12 @@
   '.MAX 4
   '.STEP 5)
 
-(define (Slider:Slider (defaultval 0) (minval 0) (maxval 100) (stepval 1)
-  ) (let (
-  obj (list (context) nil defaultval minval maxval (abs stepval))
-  )
-  (:value! obj)
-  obj))
+(define (Slider:Slider (defaultval 0) (minval 0) (maxval 100) (stepval 1))
+  (let (
+    obj (list (context) nil defaultval minval maxval (abs stepval))
+    )
+    (:value! obj)
+    obj))
 
 (define (value! newval)
   (setf (self .VALUE) (min
