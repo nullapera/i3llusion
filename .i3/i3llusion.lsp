@@ -21,7 +21,7 @@
 (setq
   myname (string (context))
   i3sock (Path (env "I3SOCK"))
-  i3ipcpath (:with-filename! (copy i3sock) (append myname ".ipc")))
+  i3ipcpath (:this-filename! (copy i3sock) (append myname ".ipc")))
 
 (let (
   selfpid (sys-info 7)
@@ -49,8 +49,8 @@
     (delete 'permutations)
     rslt)
   i3path (Path (append (real-path) "/"))
-  i3memo (:with-filename! (copy i3path) (append myname "-memo.dat"))
-  i3cond (:with-filename! (copy i3path) (append myname "-cond.dat"))
+  i3memo (:this-filename! (copy i3path) (append myname "-memo.dat"))
+  i3cond (:this-filename! (copy i3path) (append myname "-cond.dat"))
   notify (Cmd {notify-send} "-u" myname)
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
@@ -84,7 +84,7 @@
   ; C: Compositor
   C:flx (Flags 4 0 1)
   C:on (Cmd {picom} "-b --config"
-    (:path (:with-filename! (copy i3path) (append myname "-picom.conf"))))
+    (:path (:this-filename! (copy i3path) (append myname "-picom.conf"))))
   C:off (Cmd {pkill} "picom")
   C:texts '("c" "Compositor: Off" "C" "Compositor: On")
   ; Z: snooZe
@@ -103,9 +103,7 @@
   Z:slider (Slider 40 2 80 1)
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
 
-(let (
-  path (:path (:with-filename! (copy i3path) (append myname "-msg.lsp")))
-  )
+(let (path (:path (:this-filename! (copy i3path) (append myname "-msg.lsp"))))
   (setq letters_fmt (append
     "%%{A1:" path " %s_1:}"
     "%%{A2:" path " %s_2:}"
@@ -200,9 +198,7 @@
     (:run notify {critical}
       (append "'post-outs: Can not write to " (:path i3cond) "!'")))))
 
-(define (post-ins) (local (
-  data
-  )
+(define (post-ins) (local (data)
   (when (:file? i3memo)
     (if (setq data (:read-file i3memo))
       (setq M:memo (read-expr data))
@@ -210,9 +206,7 @@
         (append "'post-ins: Can not read from " (:path i3memo) "!'"))))
   (when (:file? i3cond)
     (if (setq data (:read-file i3cond))
-      (let (
-        lst (parse data "\n")
-        )
+      (let (lst (parse data "\n"))
         (dolist (e '(M P N C Z))
           (:set* (context e 'flx) (read-expr (lst $idx))))
         (:set-to M:cycle (setf (nth 3 (:to-nums M:flx)) 1))
@@ -359,9 +353,7 @@
 (define (go2position (lt1 0))
   (append "move position "
     (if (= (:at P:cycle) "upside")
-      (let (
-        yo (mul P:height lt1)
-        )
+      (let (yo (mul P:height lt1))
         (ReCT BoX:_rect)
         (format {%d px %d px}
           ReCT:_x
@@ -440,9 +432,7 @@
         P:height ReCT:_height)))
 
 ; main loop
-(local (
-  flag data json
-  )
+(local (flag data json)
   (:run C:off)
   (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})

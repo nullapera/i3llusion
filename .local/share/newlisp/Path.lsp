@@ -35,9 +35,7 @@
 (define (slash arg) ; => ((dirparts) filename)
   (if (nil? arg)
     '((nil) nil)
-    (let (
-      lst (parse arg "/")
-      )
+    (let (lst (parse arg "/"))
       (if
         (empty? lst) '((nil) nil)
         (= '("" "") lst) '(("" "") nil)
@@ -47,9 +45,7 @@
 (define (dot arg) ; => (basename extname)
   (if (nil? arg)
     '(nil nil)
-    (let (
-      lst (parse arg ".")
-      )
+    (let (lst (parse arg "."))
       (if
         (empty? lst) '(nil nil)
         (= '("" "") lst) '("" "")
@@ -109,7 +105,7 @@
             (first (Path.parse:slash arg)))))
   (dirname))
 
-(define (with-dirname! arg)
+(define (this-dirname! arg)
   (dirname! arg)
   (self))
 
@@ -126,7 +122,7 @@
               arg))))
   (filename))
 
-(define (with-filename! arg)
+(define (this-filename! arg)
   (filename! arg)
   (self))
 
@@ -142,7 +138,7 @@
             arg)))
   (basename))
 
-(define (with-basename! arg)
+(define (this-basename! arg)
   (basename! arg)
   (self))
 
@@ -158,6 +154,6 @@
             arg)))
   (extname))
 
-(define (with-extname! arg)
+(define (this-extname! arg)
   (extname! arg)
   (self))
