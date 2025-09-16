@@ -16,9 +16,9 @@
 (context 'case-match)
 
 (define-macro (case-match:case-match head) (letex (
-  var (head 0)
-  _that (head 1)
-  break (if (= (length head) 3) (head 2) nil)
+  var (pop head)
+  _that (pop head)
+  break (pop head)
   )
   (let (
     var nil
