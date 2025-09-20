@@ -196,7 +196,8 @@
   (unless (:write-file i3cond (join (map string lst) "\n"))
     (setq flag nil)
     (:run notify {critical}
-      (append "'post-outs: Can not write to " (:path i3cond) "!'")))))
+      (append "'post-outs: Can not write to " (:path i3cond) "!'")))
+  flag))
 
 (define (post-ins) (local (data)
   (when (:file? i3memo)
