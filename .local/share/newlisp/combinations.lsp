@@ -15,16 +15,12 @@
     (= r 1) (map list lst)
     (= n r) (list lst)
     (let (
-      comb (lambda (r lst)
+      comb (lambda (r lst , x (rslt '()))
         (if (= r 1)
           (map list lst)
-          (let (
-            rslt '()
-            x nil
-            )
-            (dotimes (_ (++ (- (length lst) r)))
-              (setq x (pop lst))
-              (dolist (e (comb (- r 1) lst))
-                (push (push x e) rslt -1))))))
+          (dotimes (_ (++ (- (length lst) r)))
+            (setq x (pop lst))
+            (dolist (e (comb (- r 1) lst))
+              (push (push x e) rslt -1)))))
       )
       (comb r lst)))))

@@ -11,11 +11,9 @@
   lst (replace '() (map (fn (a) (if (list? a) a (list a))) (args)))
   )
   (when lst (let (
-    prod (lambda (lstA lstB) (let (
-      rslt '()
-      )
+    prod (lambda (lstA lstB , (rslt '()))
       (dolist (a lstA)
         (dolist (b lstB)
-          (push (push b (copy a) -1) rslt -1)))))
+          (push (push b (copy a) -1) rslt -1))))
     )
     (apply prod (push '(()) lst) 2)))))
