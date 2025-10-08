@@ -155,9 +155,9 @@
   (envelope "Z_a"
     (case (:to-int Z:flx '(1 3))
       (3 "snooZe: lock")
-      (2 (format {Z%.1f} Z:remtime))
+      (2 (format {Z%.1f} (div Z:remtime 10)))
       (1 "snooZe: unlock")
-      (0 (format {z%.1f} Z:remtime))))
+      (0 (format {z%.1f} (div Z:remtime 10)))))
   (when (:b Z:flx 3)
     (envelope "Z_b" (format {<  %.1fhrs} (div (:value Z:slider) 10)))
     (envelope "Z_c" (append "<  " (:at Z:cycle))))
@@ -172,13 +172,12 @@
 
 (define (remtime)
   (setq Z:remtime
-    (div (- (:value Z:slider)
-            (/ (- (date-value) Z:date-value0) 360))
-         10))
+    (- (:value Z:slider)
+       (/ (- (date-value) Z:date-value0) 360)))
   (if
     (<= Z:remtime)
     (systemctl (:at Z:cycle))
-    (<= Z:remtime 0.2)
+    (<= Z:remtime (:minvalue Z:slider))
     (:run notify {critical}
       (append "'snooZe: Close to " (:at Z:cycle) "!'"))))
 
