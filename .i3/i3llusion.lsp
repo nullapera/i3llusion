@@ -164,7 +164,7 @@
   (write-line 1 (join letters))))
 
 (define (kelvinize)
-  (:value! N:slider (int (last (parse (nth -2 (:run N:on)))))))
+  (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
 
 (define (systemctl cmd)
   (:run Z:systemctl cmd)
