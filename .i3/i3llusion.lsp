@@ -152,15 +152,13 @@
   (when (and (:b N:flx 3) (:b N:flx 1))
     (envelope "N_b" (format {%dK} (:value N:slider))))
   (envelope "C" (C:texts (:to-int C:flx '(1 3))))
-  (envelope "Z_a"
-    (case (:to-int Z:flx '(1 3))
-      (3 "snooZe: lock")
-      (2 (format {Z%.1f} (div Z:remtime 10)))
-      (1 "snooZe: unlock")
-      (0 (format {z%.1f} (div Z:remtime 10)))))
-  (when (:b Z:flx 3)
-    (envelope "Z_b" (format {<  %.1fhrs} (div (:value Z:slider) 10)))
-    (envelope "Z_c" (append "<  " (:at Z:cycle))))
+  (if (:b Z:flx 3)
+    (begin
+      (envelope "Z_a" (if (:b Z:flx 1) "snooZe: lock" "snooZe: unlock"))
+      (envelope "Z_b" (format {<  %.1fhrs} (div (:value Z:slider) 10)))
+      (envelope "Z_c" (append "<  " (:at Z:cycle))))
+    (envelope "Z_d"
+      (format (if (:b Z:flx 1) {Z%.1f} {z%.1f}) (div Z:remtime 10))))
   (write-line 1 (join letters))))
 
 (define (kelvinize)
@@ -171,15 +169,21 @@
   (timer (fn () (:run Z:lock) (setq Z:date-value0 (date-value)) (remit)) 10))
 
 (define (remtime)
-  (setq Z:remtime
-    (- (:value Z:slider)
-       (/ (- (date-value) Z:date-value0) 360)))
+  (setq Z:remtime (- (:value Z:slider) (/ (- (date-value) Z:date-value0) 360)))
   (if
     (<= Z:remtime)
     (systemctl (:at Z:cycle))
     (<= Z:remtime (:minvalue Z:slider))
     (:run notify {critical}
       (append "'snooZe: Close to " (:at Z:cycle) "!'"))))
+
+(define (adjust-remtime updown) (letn (
+  dv (+ Z:date-value0 (* (:stepvalue Z:slider) updown 360))
+  rt (- (:value Z:slider) (/ (- (date-value) dv) 360))
+  mm (min (max (:minvalue Z:slider) rt) (:maxvalue Z:slider))
+  )
+  (when (= rt mm)
+    (setq Z:date-value0 dv))))
 
 (define (post-outs) (let (
   flag true
@@ -339,7 +343,15 @@
         (timer 'remit 360)
         (remtime))
       ('("c" "4") (:step Z:cycle +1))
-      ('("c" "5") (:step Z:cycle -1))))
+      ('("c" "5") (:step Z:cycle -1))
+      ('("d" "4")
+        (adjust-remtime +1)
+        (timer 'remit 360)
+        (remtime))
+      ('("d" "5")
+        (adjust-remtime -1)
+        (timer 'remit 360)
+        (remtime))))
     ("X" (case (tail 0)
       ("8" (setq flag true))
       ("postouts" (when (post-outs)
