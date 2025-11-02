@@ -12,9 +12,7 @@
   "notify-send" "picom" "pkill" "ps" "redshift" "systemctl"
   "xautolock" "xprop" "xset")
 
-(require
-  "Flags" "Cmds" "Cycle" "Path+" "Slider" "permutations"
-  "case-match" "i3llusion/i3ipc")
+(require "Path+")
 
 (context 'i3llusion)
 
@@ -37,23 +35,40 @@
       (throw-error (append "Can not be deleted! : '"
                            (:path i3ipcpath) "'")))))
 
+(require
+  "Flags" "Cmds" "Cycle" "Slider" "permutations"
+  "case-match" "rebox" "i3llusion/i3ipc")
+
+(constant 'SIX 6)
+
 (setq
   scratcheds '()
   ipc (i3ipc i3sock)
   ipc4sub (i3ipc i3sock)
-  colors (let (
-    rslt (Cycle (map
-      (fn (a) (join (cons "#" a)))
-      (permutations 3 '("8" "a" "c" "f"))))
-    )
-    (delete 'permutations)
-    rslt)
+  colors (Cycle (map
+    (fn (a) (join (cons "#" a)))
+    (permutations 3 '("8" "a" "c" "f"))))
   i3path (Path (append (real-path) "/"))
   i3memo (:this-filename! (copy i3path) (append myname "-memo.dat"))
   i3cond (:this-filename! (copy i3path) (append myname "-cond.dat"))
   notify (Cmd {notify-send} "-u" myname)
   xprop (Cmd {xprop}
-    "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
+    "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id")
+  tix (begin
+    (mutuple {TX} "counter limit func")
+    (rebox {TX} '(
+      ([] "kelvin" MAIN:TX 0 60
+          (when (and (:b N:flx 1) (not (:b N:flx 0)))
+            (kelvinize)))
+      ([] "pouts" MAIN:TX 0 60 (post-outs))
+      ([] "snooze" MAIN:TX 60 60 (begin (-- Z:remtime) (remtime)))))))
+
+(macro (@kelvin) (tix TX:_kelvin))
+(macro (@snooze) (tix TX:_snooze))
+
+(delete 'isinPATH)
+(delete 'permutations)
+(delete 'rebox)
 
 (setq
   ; M: Mode
@@ -90,8 +105,8 @@
   ; Z: snooZe
   Z:flx (Flags 4 0 1)
   Z:fullscreen_mode 0
-  Z:date-value0 (date-value)
-  Z:remtime 0.0
+  Z:limittime 80
+  Z:remtime 80
   Z:on (Cmds
     (Cmd {xset} "s 360 360 dpms 480 480 480")
     (Cmd {xautolock} "-enable"))
@@ -100,7 +115,6 @@
     (Cmd {xautolock} "-disable"))
   Z:lock (Cmd {xautolock} "-locknow")
   Z:systemctl (Cmd {systemctl})
-  Z:slider (Slider 40 2 80 1)
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
 
 (let (path (:path (:this-filename! (copy i3path) (append myname "-msg.lsp"))))
@@ -155,7 +169,7 @@
   (if (:b Z:flx 3)
     (begin
       (envelope "Z_a" (if (:b Z:flx 1) "snooZe: lock" "snooZe: unlock"))
-      (envelope "Z_b" (format {<  %.1fhrs} (div (:value Z:slider) 10)))
+      (envelope "Z_b" (format {<  %.1fhrs} (div Z:limittime 10)))
       (envelope "Z_c" (append "<  " (:at Z:cycle))))
     (envelope "Z_d"
       (format (if (:b Z:flx 1) {Z%.1f} {z%.1f}) (div Z:remtime 10))))
@@ -166,31 +180,22 @@
 
 (define (systemctl cmd)
   (:run Z:systemctl cmd)
-  (timer (fn () (:run Z:lock) (setq Z:date-value0 (date-value)) (remit)) 10))
+  (timer (fn () (:run Z:lock) (setq Z:remtime Z:limittime) (remit)) 10))
 
 (define (remtime)
-  (setq Z:remtime (- (:value Z:slider) (/ (- (date-value) Z:date-value0) 360)))
   (if
     (<= Z:remtime)
     (systemctl (:at Z:cycle))
-    (<= Z:remtime (:minvalue Z:slider))
+    (<= Z:remtime 2)
     (:run notify {critical}
       (append "'snooZe: Close to " (:at Z:cycle) "!'"))))
-
-(define (adjust-remtime updown) (letn (
-  dv (+ Z:date-value0 (* (:stepvalue Z:slider) updown 360))
-  rt (- (:value Z:slider) (/ (- (date-value) dv) 360))
-  mm (min (max (:minvalue Z:slider) rt) (:maxvalue Z:slider))
-  )
-  (when (= rt mm)
-    (setq Z:date-value0 dv))))
 
 (define (post-outs) (let (
   flag true
   lst (list
     (:to-nums M:flx) (:to-nums P:flx) (:to-nums N:flx)
     (:to-nums C:flx) (:to-nums Z:flx) (:index P:cycle)
-    (:value N:slider) (:value Z:slider) (:index Z:cycle))
+    (:value N:slider) Z:limittime (:index Z:cycle))
   )
   (unless (:write-file i3memo (string M:memo))
     (setq flag nil)
@@ -219,20 +224,26 @@
           (:run N:manual (string (:value! N:slider (int (lst 6))))))
         (when (:b C:flx 1)
           (:run C:on))
-        (:value! Z:slider (int (lst 7)))
+        (setq Z:limittime (int (lst 7))
+              Z:remtime Z:limittime)
         (when (:b Z:flx 1)
           (:run Z:on))
         (:at Z:cycle (int (lst 8))))
       (:run notify {critical}
         (append "'post-ins: Can not read from " (:path i3cond) "!'"))))))
 
-(define (remit)
-  (when (and (:b N:flx 1) (not (:b N:flx 0)))
-    (kelvinize))
-  (post-outs)
-  (remtime)
-  (letters2polybar)
-  (timer 'remit 360))
+(define (remit) (local (
+  i flag
+  )
+  (dotree (e TX true)
+    (setq i (eval e))
+    (when (<= (:counter! (tix i) --))
+      (:counter! (tix i) (:limit (tix i)))
+      (eval (:func (tix i)))
+      (setq flag true)))
+  (when flag
+    (letters2polybar))
+  (timer 'remit SIX)))
 
 (define (propeller) (let (
   x nil
@@ -310,9 +321,12 @@
       ('(? "1")
         (:flag N:flx 0 nil)
         (if (:not! N:flx 1)
-          (kelvinize)
+          (begin
+            (:counter! @kelvin (:limit @kelvin))
+            (kelvinize))
           (:run N:off)))
       ('(? "2") (when (:b N:flx 0)
+        (:counter! @kelvin (:limit @kelvin))
         (kelvinize)
         (:flag N:flx 0 nil)))
       ('(? "3") (:not! N:flx 3))
@@ -328,29 +342,20 @@
     ("Z" (case-match (r tail r)
       ('(? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
       ('(? "2")
-        (setq Z:date-value0 (date-value))
-        (timer 'remit 360)
+        (setq Z:remtime Z:limittime)
+        (:counter! @snooze (:limit @snooze))
         (remtime))
       ('(? "3") (:not! Z:flx 3))
-      ('("b" "4")
-        (:step Z:slider +1)
-        (setq Z:date-value0 (date-value))
-        (timer 'remit 360)
-        (remtime))
-      ('("b" "5")
-        (:step Z:slider -1)
-        (setq Z:date-value0 (date-value))
-        (timer 'remit 360)
-        (remtime))
+      ('("b" "4") (++ Z:limittime))
+      ('("b" "5") (setq Z:limittime (max (-- Z:limittime) 2)))
       ('("c" "4") (:step Z:cycle +1))
       ('("c" "5") (:step Z:cycle -1))
       ('("d" "4")
-        (adjust-remtime +1)
-        (timer 'remit 360)
-        (remtime))
+        (++ Z:remtime)
+        (:counter! @snooze (:limit @snooze)))
       ('("d" "5")
-        (adjust-remtime -1)
-        (timer 'remit 360)
+        (-- Z:remtime)
+        (:counter! @snooze (:limit @snooze))
         (remtime))))
     ("X" (case (tail 0)
       ("8" (setq flag true))
