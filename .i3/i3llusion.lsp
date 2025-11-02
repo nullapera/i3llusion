@@ -37,7 +37,7 @@
 
 (require
   "Flags" "Cmds" "Cycle" "Slider" "permutations"
-  "case-match" "rebox" "i3llusion/i3ipc")
+  "case-match" "rebox" "mutuple" "i3llusion/i3ipc")
 
 (constant 'SIX 6)
 
@@ -65,10 +65,6 @@
 
 (macro (@kelvin) (tix TX:_kelvin))
 (macro (@snooze) (tix TX:_snooze))
-
-(delete 'isinPATH)
-(delete 'permutations)
-(delete 'rebox)
 
 (setq
   ; M: Mode
@@ -322,11 +318,11 @@
         (:flag N:flx 0 nil)
         (if (:not! N:flx 1)
           (begin
-            (:counter! @kelvin (:limit @kelvin))
+            (:counter! (@kelvin) (:limit (@kelvin)))
             (kelvinize))
           (:run N:off)))
       ('(? "2") (when (:b N:flx 0)
-        (:counter! @kelvin (:limit @kelvin))
+        (:counter! (@kelvin) (:limit (@kelvin)))
         (kelvinize)
         (:flag N:flx 0 nil)))
       ('(? "3") (:not! N:flx 3))
@@ -343,7 +339,7 @@
       ('(? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
       ('(? "2")
         (setq Z:remtime Z:limittime)
-        (:counter! @snooze (:limit @snooze))
+        (:counter! (@snooze) (:limit (@snooze)))
         (remtime))
       ('(? "3") (:not! Z:flx 3))
       ('("b" "4") (++ Z:limittime))
@@ -352,10 +348,10 @@
       ('("c" "5") (:step Z:cycle -1))
       ('("d" "4")
         (++ Z:remtime)
-        (:counter! @snooze (:limit @snooze)))
+        (:counter! (@snooze) (:limit (@snooze))))
       ('("d" "5")
         (-- Z:remtime)
-        (:counter! @snooze (:limit @snooze))
+        (:counter! (@snooze) (:limit (@snooze)))
         (remtime))))
     ("X" (case (tail 0)
       ("8" (setq flag true))
