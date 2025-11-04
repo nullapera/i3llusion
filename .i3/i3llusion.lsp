@@ -39,8 +39,6 @@
   "Flags" "Cmds" "Cycle" "Slider" "permutations"
   "case-match" "rebox" "mutuple" "i3llusion/i3ipc")
 
-(constant 'SIX 6)
-
 (setq
   scratcheds '()
   ipc (i3ipc i3sock)
@@ -61,7 +59,7 @@
           (when (and (:b N:flx 1) (not (:b N:flx 0)))
             (kelvinize)))
       ([] "pouts" MAIN:TX 0 60 (post-outs))
-      ([] "snooze" MAIN:TX 60 60 (begin (-- Z:remtime) (remtime)))))))
+      ([] "snooze" MAIN:TX 60 60 (begin (-- Z:timecounter) (checktime)))))))
 
 (macro (@kelvin) (tix TX:_kelvin))
 (macro (@snooze) (tix TX:_snooze))
@@ -101,8 +99,8 @@
   ; Z: snooZe
   Z:flx (Flags 4 0 1)
   Z:fullscreen_mode 0
-  Z:limittime 80
-  Z:remtime 80
+  Z:timelimit 80
+  Z:timecounter 80
   Z:on (Cmds
     (Cmd {xset} "s 360 360 dpms 480 480 480")
     (Cmd {xautolock} "-enable"))
@@ -165,10 +163,10 @@
   (if (:b Z:flx 3)
     (begin
       (envelope "Z_a" (if (:b Z:flx 1) "snooZe: lock" "snooZe: unlock"))
-      (envelope "Z_b" (format {<  %.1fhrs} (div Z:limittime 10)))
+      (envelope "Z_b" (format {<  %.1fhrs} (div Z:timelimit 10)))
       (envelope "Z_c" (append "<  " (:at Z:cycle))))
     (envelope "Z_d"
-      (format (if (:b Z:flx 1) {Z%.1f} {z%.1f}) (div Z:remtime 10))))
+      (format (if (:b Z:flx 1) {Z%.1f} {z%.1f}) (div Z:timecounter 10))))
   (write-line 1 (join letters))))
 
 (define (kelvinize)
@@ -176,13 +174,13 @@
 
 (define (systemctl cmd)
   (:run Z:systemctl cmd)
-  (timer (fn () (:run Z:lock) (setq Z:remtime Z:limittime) (remit)) 10))
+  (timer (fn () (:run Z:lock) (setq Z:timecounter Z:timelimit) (remit)) 10))
 
-(define (remtime)
+(define (checktime)
   (if
-    (<= Z:remtime)
+    (<= Z:timecounter)
     (systemctl (:at Z:cycle))
-    (<= Z:remtime 2)
+    (<= Z:timecounter 2)
     (:run notify {critical}
       (append "'snooZe: Close to " (:at Z:cycle) "!'"))))
 
@@ -191,7 +189,7 @@
   lst (list
     (:to-nums M:flx) (:to-nums P:flx) (:to-nums N:flx)
     (:to-nums C:flx) (:to-nums Z:flx) (:index P:cycle)
-    (:value N:slider) Z:limittime (:index Z:cycle))
+    (:value N:slider) Z:timelimit (:index Z:cycle))
   )
   (unless (:write-file i3memo (string M:memo))
     (setq flag nil)
@@ -220,8 +218,8 @@
           (:run N:manual (string (:value! N:slider (int (lst 6))))))
         (when (:b C:flx 1)
           (:run C:on))
-        (setq Z:limittime (int (lst 7))
-              Z:remtime Z:limittime)
+        (setq Z:timelimit (int (lst 7))
+              Z:timecounter Z:timelimit)
         (when (:b Z:flx 1)
           (:run Z:on))
         (:at Z:cycle (int (lst 8))))
@@ -239,7 +237,7 @@
       (setq flag true)))
   (when flag
     (letters2polybar))
-  (timer 'remit SIX)))
+  (timer 'remit 6)))
 
 (define (propeller) (let (
   x nil
@@ -338,21 +336,21 @@
     ("Z" (case-match (r tail r)
       ('(? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
       ('(? "2")
-        (setq Z:remtime Z:limittime)
+        (setq Z:timecounter Z:timelimit)
         (:counter! (@snooze) (:limit (@snooze)))
-        (remtime))
+        (checktime))
       ('(? "3") (:not! Z:flx 3))
-      ('("b" "4") (++ Z:limittime))
-      ('("b" "5") (setq Z:limittime (max (-- Z:limittime) 2)))
+      ('("b" "4") (++ Z:timelimit))
+      ('("b" "5") (setq Z:timelimit (max (-- Z:timelimit) 2)))
       ('("c" "4") (:step Z:cycle +1))
       ('("c" "5") (:step Z:cycle -1))
       ('("d" "4")
-        (++ Z:remtime)
+        (++ Z:timecounter)
         (:counter! (@snooze) (:limit (@snooze))))
       ('("d" "5")
-        (-- Z:remtime)
+        (-- Z:timecounter)
         (:counter! (@snooze) (:limit (@snooze)))
-        (remtime))))
+        (checktime))))
     ("X" (case (tail 0)
       ("8" (setq flag true))
       ("postouts" (when (post-outs)

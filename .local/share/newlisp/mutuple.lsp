@@ -3,7 +3,7 @@
 ;;  (require "mutuple")
 ;;
 ;;  (mutuple {Trio} "f1rst s3cond th1rd")
-;;  (setq trio (Trio '("alfa" "beta" "gamma")))
+;;  (setq trio (Trio "alfa" "beta" "gamma"))
 ;;  (:keys@ trio) => ("f1rst" "s3cond" "th1rd")
 ;;  (:values@ trio) => ("alfa" "beta" "gamma")
 ;;  (:dict@ trio) => (("f1rst" "alfa") ("s3cond" "beta") ("th1rd" "gamma"))

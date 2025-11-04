@@ -16,15 +16,17 @@
 
 (define (rebox:rebox ctxname lst) (letn (
   ctx (new Class (sym ctxname MAIN))
-  rf (ref '[] (push ctx lst))
+  rf (ref [] (push ctx lst))
   )
   (while rf
     (pop rf -1)
-    (letex (
-      _rf rf
-      nm (begin (pop (lst rf)) (pop (lst rf)))
-      )
-      (context ctx nm (lambda () (append '_rf (args))))
-      (context ctx (string "_" nm) '_rf))
-    (setq rf (ref '[] lst)))
+    (pop (lst rf))
+    (tag ctx (pop (lst rf)) rf)
+    (setq rf (ref [] lst)))
   lst))
+
+(define (tag ctx nm rf) (letex (
+  _rf rf
+  )
+  (context ctx nm (lambda () (append '_rf (args))))
+  (context ctx (string "_" nm) '_rf)))
