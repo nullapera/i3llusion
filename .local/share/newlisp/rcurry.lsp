@@ -7,5 +7,5 @@
 ;;
 (context 'rcurry)
 
-(define-macro (rcurry:rcurry func arg1)
-  (expand (lambda (arg0) (func arg0 arg1)) 'func 'arg1))
+(define-macro (rcurry:rcurry FN ARG)
+  (expand (lambda (arg) (FN arg ARG))))

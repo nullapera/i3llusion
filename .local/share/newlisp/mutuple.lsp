@@ -22,13 +22,14 @@
   (context ctx 'values@ (lambda () (slice (self) 1)))
   (context ctx 'dict@ (lambda ()
     (map list (context (context) 'keys[]) (slice (self) 1))))
-  (for (i 1 (length keys[]))
-    (context ctx (keys[] (- i 1)) (expand (lambda () (self i)) 'i))
-    (context ctx (string (keys[] (- i 1)) "!") (expand
+  (for (i 1 (length keys[])) (letex (
+    i i
+    )
+    (context ctx (keys[] (- i 1)) (lambda () (self i)))
+    (context ctx (string (keys[] (- i 1)) "!")
       (lambda (arg)
         (setf (self i)
               (if (or (primitive? arg) (lambda? arg))
                 (arg (self i))
-                arg)))
-      'i)))
+                arg))))))
   (context MAIN ctxname)))

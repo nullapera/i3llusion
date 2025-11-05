@@ -26,7 +26,7 @@
   lst))
 
 (define (tag ctx nm rf) (letex (
-  _rf rf
+  rf rf
   )
-  (context ctx nm (lambda () (append '_rf (args))))
-  (context ctx (string "_" nm) '_rf)))
+  (context ctx nm (lambda () (append 'rf (args))))
+  (context ctx (string "_" nm) 'rf)))
