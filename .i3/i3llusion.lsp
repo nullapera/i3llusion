@@ -174,7 +174,12 @@
 
 (define (systemctl cmd)
   (:run Z:systemctl cmd)
-  (timer (fn () (:run Z:lock) (setq Z:timecounter Z:timelimit) (remit)) 10))
+  (timer (fn ()
+    (:run Z:lock)
+    (setq Z:timecounter Z:timelimit)
+    (:counter! (@snooze) (:limit (@snooze)))
+    (:counter! (@kelvin) 0)
+    (remit)) 6))
 
 (define (checktime)
   (if
