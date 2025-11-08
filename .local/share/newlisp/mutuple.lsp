@@ -14,22 +14,21 @@
 (context 'mutuple)
 
 (define (mutuple:mutuple ctxname keys) (let (
-  ctx (new Class (sym ctxname MAIN))
-  keys[] (if (list? keys) keys (parse keys))
+  i nil
+  code [text] (begin
+    (setq keys[] (if (list? mutuple:keys) mutuple:keys (parse mutuple:keys)))
+    (define (keys@) keys[])
+    (define (values@) (slice (self) 1))
+    (define (dict@) (map list keys[] (slice (self) 1)))
+    (for (mutuple:i 1 (length keys[]))
+      (set (sym (keys[] (- mutuple:i 1)))
+           (expand (lambda () (self mutuple:i)) 'mutuple:i))
+      (set (sym (string (keys[] (- mutuple:i 1)) "!"))
+           (expand (lambda (arg) (setf (self mutuple:i)
+             (if (or (primitive? arg) (lambda? arg))
+               (arg (self mutuple:i))
+               arg)))
+             'mutuple:i)))) [/text]
   )
-  (context ctx 'keys[] keys[])
-  (context ctx 'keys@ (lambda () (context (context) "keys[]")))
-  (context ctx 'values@ (lambda () (slice (self) 1)))
-  (context ctx 'dict@ (lambda ()
-    (map list (context (context) "keys[]") (slice (self) 1))))
-  (for (i 1 (length keys[])) (letex (
-    i i
-    )
-    (context ctx (keys[] (- i 1)) (lambda () (self i)))
-    (context ctx (string (keys[] (- i 1)) "!")
-      (lambda ()
-        (setf (self i)
-              (if (or (primitive? (args 0)) (lambda? (args 0)))
-                ((args 0) (self i))
-                (args 0)))))))
+  (eval-string code (new Class (sym ctxname MAIN)))
   (context MAIN ctxname)))
