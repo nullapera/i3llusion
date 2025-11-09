@@ -179,7 +179,7 @@
     (setq Z:timecounter Z:timelimit)
     (:counter! (@snooze) (:limit (@snooze)))
     (:counter! (@kelvin) 0)
-    (remit)) 10))
+    (remit)) 6))
 
 (define (checktime)
   (if
@@ -232,13 +232,13 @@
         (append "'post-ins: Can not read from " (:path i3cond) "!'"))))))
 
 (define (remit) (local (
-  i flag
+  rf flag
   )
   (dotree (e TX true)
-    (setq i (eval e))
-    (when (<= (:counter! (tix i) --))
-      (:counter! (tix i) (:limit (tix i)))
-      (eval (:func (tix i)))
+    (setq rf (eval e))
+    (when (<= (:counter! (tix rf) --))
+      (:counter! (tix rf) (:limit (tix rf)))
+      (eval (:func (tix rf)))
       (setq flag true)))
   (when flag
     (letters2polybar))
@@ -412,9 +412,8 @@
   (when (or (= BoX:_window_type "normal")
             (= BoX:_window_type "unknown"))
     (PRoP BoX:_window_properties)
-    (letn (
-      rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
-      fnd (true? (find rec M:memo))
+    (let (
+      fnd (true? (find (list PRoP:_class PRoP:_instance (:n M:flx 1)) M:memo))
       )
       (switch-match (r (list (:n M:flx 1) (:n M:flx 2) fnd) r)
         ('(1 1 true)
