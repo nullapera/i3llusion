@@ -5,18 +5,22 @@
 ;;  (setq rb (rebox {RB} '(([] "alfa" 1 2) (3 4) ([] "beta" 5 6)))) or
 ;;  (begin
 ;;    (rebox {RB} '(([] "alfa") () ([] "beta")))
-;;    (setq rb (RB '(1 2) '(3 4) '(5 6))))
-;;  (rb RB:_alfa) or (rb (RB:alfa)) or (rb (:alfa rb)) => (1 2)
-;;  (rb (RB:alfa 1)) or (rb (:alfa rb 1)) => 2
-;;  (++ (rb (RB:beta 1))) or (++ (rb (:beta rb 1))) => 7
+;;    (setq rb '((1 2) (3 4) (5 6)))) or
+;;  (begin
+;;    (rebox {RB})
+;;    (map (fn (n r) (rebox:tag RB n r)) '("alfa" "beta") '((0) (2)))
+;;    (setq rb '((1 2) (3 4) (5 6))))
+;;  (rb RB:_alfa) or (rb (RB:alfa)) => (1 2)
+;;  (rb (RB:alfa 1)) => 2
+;;  (++ (rb (RB:beta 1))) => 7
 ;;
 (global (constant '[] '[]))
 
 (context 'rebox)
 
-(define (rebox:rebox ctxname lst) (letn (
+(define (rebox:rebox ctxname (lst '())) (let (
   ctx (new Class (sym ctxname MAIN))
-  rf (ref [] (push ctx lst))
+  rf (ref [] lst)
   )
   (while rf
     (pop rf -1)

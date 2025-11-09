@@ -449,8 +449,7 @@
 
 ; main loop
 (local (flag data json)
-  (map (fn (a) (replace (string a) require:dbase) (delete a))
-      '(isinPATH permutations mutuple rebox))
+  (map delete '(isinPATH permutations mutuple rebox))
   (:run C:off)
   (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})
