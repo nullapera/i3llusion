@@ -37,7 +37,7 @@
 
 (require
   "Flags" "Cmds" "Cycle" "Slider" "permutations"
-  "case-match" "rebox" "mutuple" "i3llusion/i3ipc")
+  "switch-match" "rebox" "mutuple" "i3llusion/i3ipc")
 
 (setq
   scratcheds '()
@@ -173,13 +173,13 @@
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
 
 (define (systemctl cmd)
+  (:run Z:lock)
   (:run Z:systemctl cmd)
   (timer (fn ()
-    (:run Z:lock)
     (setq Z:timecounter Z:timelimit)
     (:counter! (@snooze) (:limit (@snooze)))
     (:counter! (@kelvin) 0)
-    (remit)) 6))
+    (remit)) 10))
 
 (define (checktime)
   (if
@@ -290,7 +290,7 @@
       rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
       idx (find rec M:memo)
       )
-      (case-match (r (list (:n M:flx 1) (true? idx) BoX:_floating) r)
+      (switch-match (r (list (:n M:flx 1) (true? idx) BoX:_floating) r)
         ('(1 true "user_on") (pop M:memo idx))
         ('(1 nil "user_off") (push rec M:memo))
         ('(0 true "user_off") (pop M:memo idx))
@@ -312,11 +312,11 @@
       (true
         (:not! M:flx (int (tail 0)))
         (:set-to M:cycle (:to-nums M:flx)))))
-    ("P" (case-match (r tail r)
+    ("P" (switch-match (r tail r)
       ('(? "3") (:not! P:flx 3))
       ('("b" "4") (:step P:cycle +1))
       ('("b" "5") (:step P:cycle -1))))
-    ("N" (case-match (r tail r)
+    ("N" (switch-match (r tail r)
       ('(? "1")
         (:flag N:flx 0 nil)
         (if (:not! N:flx 1)
@@ -338,7 +338,7 @@
     ("C" (case (tail 0)
       ("1" (:run (if (:not! C:flx 1) C:on C:off)))
       ("3" (:not! C:flx 3))))
-    ("Z" (case-match (r tail r)
+    ("Z" (switch-match (r tail r)
       ('(? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
       ('(? "2")
         (setq Z:timecounter Z:timelimit)
@@ -391,7 +391,7 @@
 
 (define (on-fullscreen)
   (when (:b Z:flx 1)
-    (case-match (r (cons BoX:_fullscreen_mode Z:fullscreen_mode) r)
+    (switch-match (r (cons BoX:_fullscreen_mode Z:fullscreen_mode) r)
       ('(1 0) (:run Z:off)
               (setq Z:fullscreen_mode 1))
       ('(0 1) (:run Z:on)
@@ -416,7 +416,7 @@
       rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
       fnd (true? (find rec M:memo))
       )
-      (case-match (r (list (:n M:flx 1) (:n M:flx 2) fnd) r)
+      (switch-match (r (list (:n M:flx 1) (:n M:flx 2) fnd) r)
         ('(1 1 true)
           (:command-wid ipc BoX:_window "floating disable"))
         ('(0 1 true)
