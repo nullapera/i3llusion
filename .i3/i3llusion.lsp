@@ -53,16 +53,16 @@
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id")
   tix (begin
-    (mutuple {TX} "counter limit func")
-    (rebox {TX} '(
-      ([] "kelvin" MAIN:TX 0 60
+    (mutuple {Tix} "counter limit func")
+    (rebox {TiX} '(
+      ([] "kelvin" MAIN:Tix 0 60
           (when (and (:b N:flx 1) (not (:b N:flx 0)))
             (kelvinize)))
-      ([] "pouts" MAIN:TX 0 60 (post-outs))
-      ([] "snooze" MAIN:TX 60 60 (begin (-- Z:timecounter) (checktime)))))))
+      ([] "pouts" MAIN:Tix 0 60 (post-outs))
+      ([] "snooze" MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime)))))))
 
-(macro (@kelvin) (tix TX:_kelvin))
-(macro (@snooze) (tix TX:_snooze))
+(macro (@kelvin) (tix TiX:_kelvin))
+(macro (@snooze) (tix TiX:_snooze))
 
 (setq
   ; M: Mode
@@ -234,7 +234,7 @@
 (define (remit) (local (
   rf flag
   )
-  (dotree (e TX true)
+  (dotree (e TiX true)
     (setq rf (eval e))
     (when (<= (:counter! (tix rf) --))
       (:counter! (tix rf) (:limit (tix rf)))
