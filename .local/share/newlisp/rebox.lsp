@@ -2,14 +2,7 @@
 ;;
 ;;  (require "rebox")
 ;;
-;;  (setq rb (rebox {RB} '(([] "alfa" 1 2) (3 4) ([] "beta" 5 6)))) or
-;;  (begin
-;;    (rebox {RB} '(([] "alfa") () ([] "beta")))
-;;    (setq rb '((1 2) (3 4) (5 6)))) or
-;;  (begin
-;;    (rebox {RB})
-;;    (map (fn (n r) (rebox:tag RB n r)) '("alfa" "beta") '((0) (2)))
-;;    (setq rb '((1 2) (3 4) (5 6))))
+;;  (setq rb (rebox {RB} '(([] "alfa" 1 2) (3 4) ([] "beta" 5 6))))
 ;;  (rb RB:_alfa) or (rb (RB:alfa)) => (1 2)
 ;;  (rb (RB:alfa 1)) => 2
 ;;  (++ (rb (RB:beta 1))) => 7

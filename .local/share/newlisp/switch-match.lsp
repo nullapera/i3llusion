@@ -26,7 +26,7 @@
     that _that
     )
     (doargs (e break)
-      (setq var (match (eval (first e)) that))
+      (setq var (match (eval (pop e)) that))
         (unless (nil? var)
-          (setq rslt (eval (cons 'begin (rest e))))))
+          (setq rslt (eval (cons 'begin e)))))
     rslt)))
