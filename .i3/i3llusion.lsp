@@ -173,6 +173,7 @@
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
 
 (define (systemctl cmd)
+  (timer 'remit 0)
   (:run Z:lock)
   (:run Z:systemctl cmd)
   (timer (fn ()
@@ -281,7 +282,7 @@
 
 (define (toggle-memo) (letn (
   json (json-parse (:gettree ipc))
-  fcsd (json (slice (ref '("focused"  true) json match) 0 -1))
+  fcsd (json (slice (ref '("focused" true) json match) 0 -1))
   )
   (when (= (lookup "type" fcsd) "con")
     (BoX fcsd)
@@ -289,12 +290,13 @@
     (letn (
       rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
       idx (find rec M:memo)
+      r (list (:n M:flx 1) (true? idx) BoX:_floating)
       )
-      (switch-match (r (list (:n M:flx 1) (true? idx) BoX:_floating) r)
-        ('(1 true "user_on") (pop M:memo idx))
-        ('(1 nil "user_off") (push rec M:memo))
-        ('(0 true "user_off") (pop M:memo idx))
-        ('(0 nil "user_on") (push rec M:memo)))))))
+      (if
+        (= '(1 true "user_on") r) (pop M:memo idx)
+        (= '(1 nil "user_off") r) (push rec M:memo)
+        (= '(0 true "user_off") r) (pop M:memo idx)
+        (= '(0 nil "user_on") r) (push rec M:memo))))))
 
 (define (lettershop stamp) (letn (
   flag nil
