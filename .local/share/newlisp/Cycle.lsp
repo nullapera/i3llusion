@@ -30,7 +30,7 @@
   (unless (nil? newindex) (let (
     x (% newindex (self .LENGTH))
     )
-    (setf (self .INDEX) (if (< x) (+ (self .LENGTH) x) x))))
+    (setf (self .INDEX) (if (< x 0) (+ (self .LENGTH) x) x))))
   (nth (self .INDEX) (self .LIST)))
 
 (define (step n)

@@ -2,7 +2,8 @@
 ;;
 ;;  (require "rebox")
 ;;
-;;  (setq rb (rebox {RB} '(([] "alfa" 1 2) (3 4) ([] "beta" 5 6))))
+;;  (setq rb (rebox {RB} '(([] "alfa" 1 2) (3 4) ([] "beta" 5 6)))) =>
+;;    ((1 2) (3 4) (5 6))
 ;;  (rb RB:_alfa) or (rb (RB:alfa)) => (1 2)
 ;;  (rb (RB:alfa 1)) => 2
 ;;  (++ (rb (RB:beta 1))) => 7

@@ -234,6 +234,7 @@
 (define (remit) (local (
   rf flag
   )
+  (timer 'remit 6)
   (dotree (e TiX true)
     (setq rf (eval e))
     (when (<= (:counter! (tix rf) --))
@@ -241,8 +242,7 @@
       (eval (:func (tix rf)))
       (setq flag true)))
   (when flag
-    (letters2polybar))
-  (timer 'remit 6)))
+    (letters2polybar))))
 
 (define (propeller) (let (
   x nil
@@ -390,12 +390,13 @@
                     (!= PRoP:_instance (lookup "instance" (e 1))))))))
 
 (define (on-fullscreen)
-  (when (:b Z:flx 1)
-    (switch-match (r (cons BoX:_fullscreen_mode Z:fullscreen_mode) r)
-      ('(1 0) (:run Z:off)
-              (setq Z:fullscreen_mode 1))
-      ('(0 1) (:run Z:on)
-              (setq Z:fullscreen_mode 0)))))
+  (when (:b Z:flx 1) (let (
+    r (cons BoX:_fullscreen_mode Z:fullscreen_mode)
+    )
+    (cond ((= '(1 0) r) (:run Z:off)
+                        (setq Z:fullscreen_mode 1))
+          ((= '(0 1) r) (:run Z:on)
+                        (setq Z:fullscreen_mode 0))))))
 
 (define (on-floating)
   (if (or (= BoX:_window_type "normal")

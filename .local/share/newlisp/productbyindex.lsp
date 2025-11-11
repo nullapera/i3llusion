@@ -11,7 +11,7 @@
   lst (replace '() (map (fn (a) (if (list? a) a (list a))) (args)))
   len (map length lst)
   )
-  (if (or (< ndx) (<= (apply * len) ndx))
+  (if (or (< ndx 0) (<= (apply * len) ndx))
     '()
     (let (
       rslt '()
