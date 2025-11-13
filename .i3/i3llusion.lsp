@@ -252,10 +252,10 @@
   )
   (dolist (e (ref-all '("scratchpad_state" ?) json match))
     (when (!= (json (append e '(1))) "none")
-      (setq x (first (lookup "nodes" (json (slice e 0 -1)))))
+      (setq x (first (lookup "nodes" (json (0 -1 e)))))
       (push (lookup "window" x) lst -1)))
   (when lst (let (
-    fcsd (json (slice (ref '("focused" true) json match) 0 -1))
+    fcsd (json (0 -1 (ref '("focused" true) json match)))
     )
     (if (= (lookup "type" fcsd) "con")
       (let (
@@ -282,7 +282,7 @@
 
 (define (toggle-memo) (letn (
   json (json-parse (:gettree ipc))
-  fcsd (json (slice (ref '("focused" true) json match) 0 -1))
+  fcsd (json (0 -1 (ref '("focused" true) json match)))
   )
   (when (= (lookup "type" fcsd) "con")
     (BoX fcsd)
@@ -443,7 +443,7 @@
 
 (define (on-workspace-focus) (letn (
   json (json-parse (:getworkspaces ipc))
-  fcsd (json (slice (ref '("focused" true) json match) 0 -1))
+  fcsd (json (0 -1 (ref '("focused" true) json match)))
   )
   (ReCT (lookup "rect" fcsd))
   (setq P:y ReCT:_y

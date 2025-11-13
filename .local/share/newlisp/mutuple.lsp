@@ -15,11 +15,12 @@
 
 (define (mutuple:mutuple ctxname keys) (let (
   i nil
+  keys (if (list? keys) keys (parse keys))
   code [text] (begin
-    (setq keys[] (if (list? mutuple:keys) mutuple:keys (parse mutuple:keys)))
+    (setq keys[] mutuple:keys)
     (define (keys@) keys[])
-    (define (values@) (slice (self) 1))
-    (define (dict@) (map list keys[] (slice (self) 1)))
+    (define (values@) (1 (self)))
+    (define (dict@) (map list keys[] (1 (self))))
     (for (mutuple:i 1 (length keys[]))
       (set (sym (keys[] (- mutuple:i 1)))
            (expand (lambda () (self mutuple:i)) 'mutuple:i))

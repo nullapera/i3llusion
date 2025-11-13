@@ -40,7 +40,7 @@
         (empty? lst) '((nil) nil)
         (= '("" "") lst) '(("" "") nil)
         (= (length lst) 1) (list '(nil) (first lst))
-        (list (slice lst 0 -1) (last lst))))))
+        (list (0 -1 lst) (last lst))))))
 
 (define (dot arg) ; => (basename extname)
   (if (nil? arg)
@@ -50,7 +50,7 @@
         (empty? lst) '(nil nil)
         (= '("" "") lst) '("" "")
         (= (length lst) 1) (list arg nil)
-        (list (join (slice lst 0 -1) ".") (last lst))))))
+        (list (join (0 -1 lst) ".") (last lst))))))
 
 
 (context 'Path.join)
