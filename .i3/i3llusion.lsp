@@ -37,7 +37,7 @@
 
 (require
   "Flags" "Cmds" "Cycle" "Slider" "permutations"
-  "switch-match" "rebox" "mutuple" "i3llusion/i3ipc")
+  "switch-match" "mutuple" "i3llusion/i3ipc")
 
 (setq
   scratcheds '()
@@ -53,16 +53,14 @@
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id")
   tix (begin
-    (mutuple {Tix} "counter limit func")
-    (rebox {TiX} '(
-      ([] "kelvin" MAIN:Tix 0 60
-          (when (and (:b N:flx 1) (not (:b N:flx 0)))
-            (kelvinize)))
-      ([] "pouts" MAIN:Tix 0 60 (post-outs))
-      ([] "snooze" MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime)))))))
+        (mutuple {Tix} "counter limit func")
+        '((MAIN:Tix 0 60 (when (and (:b N:flx 1) (not (:b N:flx 0)))
+                           (kelvinize)))
+          (MAIN:Tix 0 60 (post-outs))
+          (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime))))))
 
-(macro (@kelvin) (tix TiX:_kelvin))
-(macro (@snooze) (tix TiX:_snooze))
+(macro (@kelvin) (tix 0))
+(macro (@snooze) (tix 2))
 
 (setq
   ; M: Mode
@@ -184,7 +182,7 @@
 
 (define (checktime)
   (if
-    (<= Z:timecounter)
+    (<= Z:timecounter 0)
     (systemctl (:at Z:cycle))
     (<= Z:timecounter 2)
     (:run notify {critical}
@@ -233,14 +231,13 @@
         (append "'post-ins: Can not read from " (:path i3cond) "!'"))))))
 
 (define (remit) (local (
-  rf flag
+  flag
   )
   (timer 'remit 6)
-  (dotree (e TiX true)
-    (setq rf (eval e))
-    (when (<= (:counter! (tix rf) --))
-      (:counter! (tix rf) (:limit (tix rf)))
-      (eval (:func (tix rf)))
+  (dotimes (e 3)
+    (when (<= (:counter! (tix e) --) 0)
+      (:counter! (tix e) (:limit (tix e)))
+      (eval (:func (tix e)))
       (setq flag true)))
   (when flag
     (letters2polybar))))
@@ -451,7 +448,7 @@
 
 ; main loop
 (local (flag data json)
-  (map delete '(isinPATH permutations mutuple rebox))
+  (map delete '(isinPATH permutations mutuple))
   (:run C:off)
   (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})
