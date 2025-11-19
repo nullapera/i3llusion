@@ -59,8 +59,8 @@
           (MAIN:Tix 0 60 (post-outs))
           (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime))))))
 
-(macro (@kelvin) (tix 0))
-(macro (@snooze) (tix 2))
+(macro (@kelvin) (first tix))
+(macro (@snooze) (last tix))
 
 (setq
   ; M: Mode
@@ -98,7 +98,7 @@
   Z:flx (Flags 4 0 1)
   Z:fullscreen_mode 0
   Z:timelimit 80
-  Z:timecounter 80
+  Z:timecounter Z:timelimit
   Z:on (Cmds
     (Cmd {xset} "s 360 360 dpms 480 480 480")
     (Cmd {xautolock} "-enable"))
@@ -301,7 +301,7 @@
   head (pop tail)
   )
   (case head
-    ("M" (case (tail 0)
+    ("M" (case (first tail)
       ("4" (when (:b M:flx 3)
         (:step M:cycle +1)
         (:set* M:flx (:at M:cycle))))
@@ -309,7 +309,7 @@
         (:step M:cycle -1)
         (:set* M:flx (:at M:cycle))))
       (true
-        (:not! M:flx (int (tail 0)))
+        (:not! M:flx (int (first tail)))
         (:set-to M:cycle (:to-nums M:flx)))))
     ("P" (switch-match (r tail r)
       ('(? "3") (:not! P:flx 3))
@@ -334,7 +334,7 @@
       ('("b" "5")
         (:flag N:flx 0 true)
         (:run N:manual (string (:step N:slider -1))))))
-    ("C" (case (tail 0)
+    ("C" (case (first tail)
       ("1" (:run (if (:not! C:flx 1) C:on C:off)))
       ("3" (:not! C:flx 3))))
     ("Z" (switch-match (r tail r)
@@ -355,14 +355,14 @@
         (-- Z:timecounter)
         (:counter! (@snooze) (:limit (@snooze)))
         (checktime))))
-    ("X" (case (tail 0)
+    ("X" (case (first tail)
       ("8" (setq flag true))
       ("postouts" (when (post-outs)
         (:run notify {normal} "'post-outs: saved by request!'")))
       ("propeller" (propeller))
       ("polytoggle" (on-workspace-focus))
       ("togglememo" (toggle-memo))
-      (true (systemctl (tail 0))))))
+      (true (systemctl (first tail))))))
   flag))
 
 (define (go2position (lt1 0))
@@ -385,8 +385,8 @@
   json (json-parse (:gettree ipc))
   )
   (dolist (e (ref-all '("window_properties" ?) json match true) flag)
-    (setq flag (and (= PRoP:_class (lookup "class" (e 1)))
-                    (!= PRoP:_instance (lookup "instance" (e 1))))))))
+    (setq flag (and (= PRoP:_class (lookup "class" (last e)))
+                    (!= PRoP:_instance (lookup "instance" (last e))))))))
 
 (define (on-fullscreen)
   (when (:b Z:flx 1) (let (
