@@ -32,8 +32,7 @@
   (map destroy (replace selfpid pids))
   (when (:file? i3ipcpath)
     (unless (:delete-file i3ipcpath)
-      (throw-error (append "Can not be deleted! : '"
-                           (:path i3ipcpath) "'")))))
+      (throw-error (append "Can not be deleted! : '" (:path i3ipcpath) "'")))))
 
 (require
   "Flags" "Cmds" "Cycle" "Slider" "permutations"
@@ -52,13 +51,12 @@
   notify (Cmd {notify-send} "-u" myname)
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id")
-  tix (begin
-        (mutuple {Tix} "counter limit func")
-        '((MAIN:Tix 0 60 (when (and (:b N:flx 1) (not (:b N:flx 0)))
-                           (kelvinize)))
-          (MAIN:Tix 0 60 (post-outs))
-          (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime))))))
+  tix '((MAIN:Tix 0 60 (when (and (:b N:flx 1) (not (:b N:flx 0)))
+                         (kelvinize)))
+        (MAIN:Tix 0 60 (post-outs))
+        (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime)))))
 
+(mutuple {Tix} "counter limit func")
 (macro (@kelvin) (first tix))
 (macro (@snooze) (last tix))
 
@@ -230,9 +228,7 @@
       (:run notify {critical}
         (append "'post-ins: Can not read from " (:path i3cond) "!'"))))))
 
-(define (remit) (local (
-  flag
-  )
+(define (remit) (local (flag)
   (timer 'remit 6)
   (dotimes (e 3)
     (when (<= (:counter! (tix e) --) 0)
@@ -398,19 +394,16 @@
                         (setq Z:fullscreen_mode 0))))))
 
 (define (on-floating)
-  (if (or (= BoX:_window_type "normal")
-          (= BoX:_window_type "unknown"))
+  (if (or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
     (:command-wid ipc BoX:_window
       (if (ends-with BoX:_floating "on")
         (append "border normal 6, " (go2position))
         "border none"))
-    (when (and (= (:at P:cycle) "upside")
-               (ends-with BoX:_floating "on"))
+    (when (and (= (:at P:cycle) "upside") (ends-with BoX:_floating "on"))
       (:command-wid ipc BoX:_window (go2position 0.1)))))
 
 (define (on-new)
-  (when (or (= BoX:_window_type "normal")
-            (= BoX:_window_type "unknown"))
+  (when (or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
     (PRoP BoX:_window_properties)
     (let (
       fnd (true? (find (list PRoP:_class PRoP:_instance (:n M:flx 1)) M:memo))
