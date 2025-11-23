@@ -445,9 +445,9 @@
   (:run C:off)
   (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})
+  (on-workspace-focus)
   (post-ins)
   (remit)
-  (on-workspace-focus)
   (until flag
     (until (net-select (:socket ipc4sub) "r" 10000)
       (dolist (child_pid (receive))
