@@ -31,11 +31,11 @@
     x (% newindex (self .LENGTH))
     )
     (setf (self .INDEX) (if (< x 0) (+ (self .LENGTH) x) x))))
-  (nth (self .INDEX) (self .LIST)))
+  ((self .LIST) (self .INDEX)))
 
 (define (step n)
   (if (null? n)
-    (nth (self .INDEX) (self .LIST))
+    ((self .LIST) (self .INDEX))
     (at (+ (self .INDEX) n))))
 
 (define (set-to item) (let (

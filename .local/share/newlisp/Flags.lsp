@@ -22,8 +22,7 @@
 
 (context 'Flags)
 
-(constant
-  '.FLAGS 1)
+(constant '.FLAGS 1)
 
 (define (Flags:Flags nsize) (let (
   obj (list (context) (dup 0 nsize))

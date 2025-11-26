@@ -20,12 +20,10 @@
 
 (context 'Cmds)
 
-(constant
-  '.CMDS 1)
+(constant '.CMDS 1)
 
 (define (Cmds:Cmds)
-  (list (context)
-        (args)))
+  (list (context) (args)))
 
 (define (dry-run)
   (map (fn (cmd (lst '())) (: Cmd:dry-run cmd lst))
