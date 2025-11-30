@@ -169,14 +169,13 @@
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
 
 (define (systemctl cmd)
-  (timer 'remit 0)
-  (:run Z:lock)
-  (:run Z:systemctl cmd)
   (timer (fn ()
+    (:run Z:lock)
     (setq Z:timecounter Z:timelimit)
     (:counter! (@snooze) (:limit (@snooze)))
     (:counter! (@kelvin) 0)
-    (remit)) 6))
+    (remit)) 6)
+  (:run Z:systemctl cmd))
 
 (define (checktime)
   (if
