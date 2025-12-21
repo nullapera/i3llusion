@@ -8,7 +8,7 @@
 ;;  (:run (Cmd "/path/cmd" (a1 a2) (a3 a4)) (b1 b2) (b3 b4)) =>
 ;;    (exec "/path/cmd a1 a2 b1 b2 a3 a4 b3 b4")
 ;;
-(require "isa" "splat" "mesh")
+(require "splat" "mesh")
 
 (context 'Cmd)
 
@@ -17,9 +17,7 @@
   '.ARGS 2)
 
 (define (Cmd:Cmd apath)
-  (list (context)
-        (if (isa apath MAIN:Path) (:path apath) apath)
-        (args)))
+  (list (context) apath (args)))
 
 (define (dry-run)
   (join (cons (self .CMD)

@@ -1,7 +1,5 @@
 ;; vim:ts=2:sw=2:et:
 ;;
-(require "isa")
-
 (context 'i3ipc)
 
 (constant
@@ -15,13 +13,11 @@
   'SUBSCRIBE 2
   'GET_TREE 4)
 
-(define (i3ipc:i3ipc apath) (letn (
-  path (if (isa apath MAIN:Path) (:path apath) apath)
-  socket (net-connect path)
-  )
-  (if socket
-    (list (context) socket)
-    (throw-error (string (context) " => No connection to: '" path "'")))))
+(define (i3ipc:i3ipc apath)
+  (list
+    (context)
+    (unless (net-connect apath)
+      (throw-error (string (context) " => No connection to: '" apath "'")))))
 
 (define (socket)
   (self .SOCKET))

@@ -16,7 +16,7 @@
     "/usr/share/newlisp"
     nlspdir)))))
 
-(define (include:include alsp) (let (
+(define (include:include alsp (ctx 'MAIN)) (let (
   rslt nil
   path nil
   dirs (append (list (real-path)) DIRS)
@@ -24,7 +24,7 @@
   (dolist (e dirs rslt)
     (setq path (append e "/" alsp ".lsp"))
     (when (file? path true)
-      (setq rslt (load path))))
+      (setq rslt (load path ctx))))
   (unless (true? rslt)
     (throw-error (append "Not loaded! : '" alsp "'")))))
 

@@ -12,14 +12,14 @@
   "notify-send" "picom" "pkill" "ps" "redshift" "systemctl"
   "xautolock" "xprop" "xset")
 
-(require "Path+")
+(require "path")
 
 (context 'i3llusion)
 
 (setq
   myname (string (context))
-  i3sock (Path (env "I3SOCK"))
-  i3ipcpath (:this-filename! (copy i3sock) (append myname ".ipc")))
+  i3sock (env "I3SOCK")
+  i3ipcpath (append (path:dir i3sock) "/" myname ".ipc"))
 
 (let (
   selfpid (sys-info 7)
@@ -30,9 +30,9 @@
     find)
   )
   (map destroy (replace selfpid pids))
-  (when (:file? i3ipcpath)
-    (unless (:delete-file i3ipcpath)
-      (throw-error (append "Can not be deleted! : '" (:path i3ipcpath) "'")))))
+  (when (file? i3ipcpath)
+    (unless (delete-file i3ipcpath)
+      (throw-error (append "Can not be deleted! : '" i3ipcpath "'")))))
 
 (require
   "Flags" "Cmds" "Cycle" "Slider" "permutations"
@@ -45,9 +45,9 @@
   colors (Cycle (map
     (fn (a) (join (cons "#" a)))
     (permutations 3 '("8" "a" "c" "f"))))
-  i3path (Path (append (real-path) "/"))
-  i3memo (:this-filename! (copy i3path) (append myname "-memo.dat"))
-  i3cond (:this-filename! (copy i3path) (append myname "-cond.dat"))
+  i3path (append (real-path) "/")
+  i3memo (append i3path myname "-memo.dat")
+  i3cond (append i3path myname "-cond.dat")
   notify (Cmd {notify-send} "-u" myname)
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id")
@@ -88,8 +88,7 @@
     "!N" "!Nightlight")
   ; C: Compositor
   C:flx (Flags 4 0 1)
-  C:on (Cmd {picom} "-b --config"
-    (:path (:this-filename! (copy i3path) (append myname "-picom.conf"))))
+  C:on (Cmd {picom} "-b --config" (append i3path myname "-picom.conf"))
   C:off (Cmd {pkill} "picom")
   C:texts '("c" "Compositor: Off" "C" "Compositor: On")
   ; Z: snooZe
@@ -107,13 +106,13 @@
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
 
-(let (path (:path (:this-filename! (copy i3path) (append myname "-msg.lsp"))))
+(let (pth (append i3path myname "-msg.lsp"))
   (setq letters_fmt (append
-    "%%{A1:" path " %s_1:}"
-    "%%{A2:" path " %s_2:}"
-    "%%{A3:" path " %s_3:}"
-    "%%{A4:" path " %s_4:}"
-    "%%{A5:" path " %s_5:}"
+    "%%{A1:" pth " %s_1:}"
+    "%%{A2:" pth " %s_2:}"
+    "%%{A3:" pth " %s_3:}"
+    "%%{A4:" pth " %s_4:}"
+    "%%{A5:" pth " %s_5:}"
     "%%{F%s} %s "
     "%%{A}%%{A}%%{A}%%{A}%%{A}")))
 
@@ -127,7 +126,7 @@
       conn nil
       data nil
       parent_pid (sys-info 6)
-      socket (net-listen (:path i3ipcpath))
+      socket (net-listen i3ipcpath)
       )
       (while true
         (setq conn (net-accept socket))
@@ -192,24 +191,24 @@
     (:to-nums C:flx) (:to-nums Z:flx) (:index P:cycle)
     (:value N:slider) Z:timelimit (:index Z:cycle))
   )
-  (unless (:write-file i3memo (string M:memo))
+  (unless (write-file i3memo (string M:memo))
     (setq flag nil)
     (:run notify {critical}
       (append "'post-outs: Can not write to " (:path i3memo) "!'")))
-  (unless (:write-file i3cond (join (map string lst) "\n"))
+  (unless (write-file i3cond (join (map string lst) "\n"))
     (setq flag nil)
     (:run notify {critical}
       (append "'post-outs: Can not write to " (:path i3cond) "!'")))
   flag))
 
 (define (post-ins) (local (data)
-  (when (:file? i3memo)
-    (if (setq data (:read-file i3memo))
+  (when (file? i3memo)
+    (if (setq data (read-file i3memo))
       (setq M:memo (read-expr data))
       (:run notify {critical}
         (append "'post-ins: Can not read from " (:path i3memo) "!'"))))
-  (when (:file? i3cond)
-    (if (setq data (:read-file i3cond))
+  (when (file? i3cond)
+    (if (setq data (read-file i3cond))
       (let (lst (parse data "\n"))
         (dolist (e '(M P N C Z))
           (:set* (context e 'flx) (read-expr (lst $idx))))
@@ -440,7 +439,7 @@
 
 ; main loop
 (local (flag data json)
-  (map delete '(isinPATH permutations mutuple))
+  (map delete '(isinPATH mutuple path permutations))
   (:run C:off)
   (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})
