@@ -5,21 +5,21 @@
 ;; Happy Friendly Hacking!
 ;;
 (silent)
-(set-locale "C" 1) ;decimal dot
+(set-locale "C" 1) ; decimal dot
 
 (require "isinPATH")
 (isinPATH true
   "notify-send" "picom" "pkill" "ps" "redshift" "systemctl"
   "xautolock" "xprop" "xset")
 
-(require "path")
+(require "dirname")
 
 (context 'i3llusion)
 
 (setq
   myname (string (context))
   i3sock (env "I3SOCK")
-  i3ipcpath (append (path:dir i3sock) "/" myname ".ipc"))
+  i3ipcpath (append (dirname i3sock) "/" myname ".ipc"))
 
 (let (
   selfpid (sys-info 7)
@@ -194,11 +194,11 @@
   (unless (write-file i3memo (string M:memo))
     (setq flag nil)
     (:run notify {critical}
-      (append "'post-outs: Can not write to " (:path i3memo) "!'")))
+      (append "'post-outs: Can not write to " i3memo "!'")))
   (unless (write-file i3cond (join (map string lst) "\n"))
     (setq flag nil)
     (:run notify {critical}
-      (append "'post-outs: Can not write to " (:path i3cond) "!'")))
+      (append "'post-outs: Can not write to " i3cond "!'")))
   flag))
 
 (define (post-ins) (local (data)
@@ -206,7 +206,7 @@
     (if (setq data (read-file i3memo))
       (setq M:memo (read-expr data))
       (:run notify {critical}
-        (append "'post-ins: Can not read from " (:path i3memo) "!'"))))
+        (append "'post-ins: Can not read from " i3memo "!'"))))
   (when (file? i3cond)
     (if (setq data (read-file i3cond))
       (let (lst (parse data "\n"))
@@ -224,7 +224,7 @@
           (:run Z:on))
         (:at Z:cycle (int (lst 8))))
       (:run notify {critical}
-        (append "'post-ins: Can not read from " (:path i3cond) "!'"))))))
+        (append "'post-ins: Can not read from " i3cond "!'"))))))
 
 (define (remit) (local (flag)
   (timer 'remit 6)
@@ -439,7 +439,7 @@
 
 ; main loop
 (local (flag data json)
-  (map delete '(isinPATH mutuple path permutations))
+  (map delete '(dirname isinPATH mutuple permutations))
   (:run C:off)
   (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})
