@@ -36,7 +36,7 @@
 
 (require
   "Flags" "Cmds" "Cycle" "Slider" "permutations"
-  "switch-match" "mutuple" "i3llusion/i3ipc")
+  "case-match" "mutuple" "i3llusion/i3ipc")<C-D-S>
 
 (setq
   scratcheds '()
@@ -77,7 +77,7 @@
   P:cycle (Cycle '("center" "mouse" "upside"))
   ; N: Nightlight
   N:flx (Flags 4 0 1)
-  N:on (Cmd {redshift} "-v -r -P -o -m randr -l 48.25:20.63 -t 6400:5400 2>&1")
+  N:on (Cmd {redshift} "-v -r -P -o -m randr -l 48.25:20.63 -t 6200:4200 2>&1")
   N:off (Cmd {redshift} "-x -m randr")
   N:manual (Cmd {redshift} "-r -P -m randr -O")
   N:slider (Slider 6400 2400 6400 50)
@@ -305,11 +305,11 @@
       (true
         (:not! M:flx (int (first tail)))
         (:set-to M:cycle (:to-nums M:flx)))))
-    ("P" (switch-match (r tail r)
+    ("P" (case-match (r tail)
       ('(? "3") (:not! P:flx 3))
       ('("b" "4") (:step P:cycle +1))
       ('("b" "5") (:step P:cycle -1))))
-    ("N" (switch-match (r tail r)
+    ("N" (case-match (r tail)
       ('(? "1")
         (:flag N:flx 0 nil)
         (if (:not! N:flx 1)
@@ -331,7 +331,7 @@
     ("C" (case (first tail)
       ("1" (:run (if (:not! C:flx 1) C:on C:off)))
       ("3" (:not! C:flx 3))))
-    ("Z" (switch-match (r tail r)
+    ("Z" (case-match (r tail)
       ('(? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
       ('(? "2")
         (setq Z:timecounter Z:timelimit)
@@ -406,7 +406,7 @@
     (let (
       fnd (true? (find (list PRoP:_class PRoP:_instance (:n M:flx 1)) M:memo))
       )
-      (switch-match (r (list (:n M:flx 1) (:n M:flx 2) fnd) r)
+      (case-match (r (list (:n M:flx 1) (:n M:flx 2) fnd) r)
         ('(1 1 true)
           (:command-wid ipc BoX:_window "floating disable"))
         ('(0 1 true)
