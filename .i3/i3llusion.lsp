@@ -36,7 +36,7 @@
 
 (require
   "Flags" "Cmds" "Cycle" "Slider" "permutations"
-  "case-match" "mutuple" "i3llusion/i3ipc")<C-D-S>
+  "case-match" "mutuple" "i3llusion/i3ipc")
 
 (setq
   scratcheds '()
@@ -213,7 +213,7 @@
         (dolist (e '(M P N C Z))
           (:set* (context e 'flx) (read-expr (lst $idx))))
         (:set-to M:cycle (setf (nth 3 (:to-nums M:flx)) 1))
-        (:at P:cycle (int (lst 5)))
+        (:at! P:cycle (int (lst 5)))
         (when (:b N:flx 0)
           (:run N:manual (string (:value! N:slider (int (lst 6))))))
         (when (:b C:flx 1)
@@ -222,7 +222,7 @@
               Z:timecounter Z:timelimit)
         (when (:b Z:flx 1)
           (:run Z:on))
-        (:at Z:cycle (int (lst 8))))
+        (:at! Z:cycle (int (lst 8))))
       (:run notify {critical}
         (append "'post-ins: Can not read from " i3cond "!'"))))))
 
@@ -352,7 +352,7 @@
     ("X" (case (first tail)
       ("8" (setq flag true))
       ("postouts" (when (post-outs)
-        (:run notify {normal} "'post-outs: saved by request!'")))
+        (:run notify {normal} "'post-outs: saved by user request!'")))
       ("propeller" (propeller))
       ("polytoggle" (on-workspace-focus))
       ("togglememo" (toggle-memo))
@@ -406,7 +406,7 @@
     (let (
       fnd (true? (find (list PRoP:_class PRoP:_instance (:n M:flx 1)) M:memo))
       )
-      (case-match (r (list (:n M:flx 1) (:n M:flx 2) fnd) r)
+      (case-match (r (list (:n M:flx 1) (:n M:flx 2) fnd))
         ('(1 1 true)
           (:command-wid ipc BoX:_window "floating disable"))
         ('(0 1 true)
