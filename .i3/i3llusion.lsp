@@ -265,7 +265,7 @@
           (:command-wid ipc fwid (string "swap container with id " x))
           (:command-wid ipc x
             (if ffon
-              "border normal 6, floating enable"
+              "border pixel 6, floating enable"
               "border none, floating disable"))
           (when ffon
             (:run xprop (string x)))))
@@ -395,7 +395,7 @@
   (if (or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
     (:command-wid ipc BoX:_window
       (if (ends-with BoX:_floating "on")
-        (append "border normal 6, " (go2position))
+        (append "border pixel 6, " (go2position))
         "border none"))
     (when (and (= (:at P:cycle) "upside") (ends-with BoX:_floating "on"))
       (:command-wid ipc BoX:_window (go2position 0.1)))))
