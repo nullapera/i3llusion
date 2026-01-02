@@ -9,7 +9,7 @@
 
 (define (dirname:dirname path base?) (let (
   rslt (if
-    (or (= "." path) (= ".." path) (= "/" path) (= "" path))
+    (find path '("." ".." "/" ""))
     (list path "")
     (regex {\A(.+)/([^/]*)\z} path)
     (list $1 $2)

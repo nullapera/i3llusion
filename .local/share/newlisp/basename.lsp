@@ -14,7 +14,7 @@
 (define (basename:basename path xext ext? (rxo 0)) (let (
   xt ""
   bs (if
-    (or (= "." path) (= ".." path) (= "/" path) (= "" path))
+    (find path '("." ".." "/" ""))
     ""
     (regex {([^/]*)\z} path)
     $1

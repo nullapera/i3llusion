@@ -8,7 +8,7 @@
 
 (define (extname:extname path)
   (if
-    (or (= "." path) (= ".." path) (= "/" path) (= "" path))
+    (find path '("." ".." "/" ""))
     ""
     (regex {(?<!/|\A)(\.[^.]*)\z} path)
     $1
