@@ -4,6 +4,8 @@ exec scrot --silent --quality 33 --format jpg - |
   i3lock \
     --raw $(xdpyinfo | sed -n 's/dimensions:[ ]*\([0-9]*x[0-9]*\).*/\1/p;TL;q;:L'):rgb \
     --image /dev/stdin \
+    --ignore-empty-password \
+    --nofork \
     --radius 128 \
     --ring-width 24 \
     --clock \
