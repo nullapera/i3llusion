@@ -14,17 +14,15 @@
 (define (basename:basename path xext ext? (rxo 0)) (let (
   xt ""
   bs (if
-    (find path '("." ".." "/" ""))
-    ""
-    (regex {([^/]*)\z} path)
-    $1
+    (find path '("." ".." "/" "")) ""
+    (regex {([^/]*)\z} path) $1
     "")
   )
   (when (and xext (!= bs ""))
     (replace
       (if (= xext ".*")
         {(?<!\A)(\.[^.]*)\z}
-        (format {(?<!\A)(\%s)\z} xext))
+        (format {(?<!\A)(%s)\z} (replace "." xext "\\.")))
       bs "" rxo)
     (setq xt $1))
   (if ext?

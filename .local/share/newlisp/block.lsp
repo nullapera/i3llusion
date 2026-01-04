@@ -41,5 +41,4 @@
 
 (context 'thru)
 
-(define (thru:thru symbol value)
-  (throw (list (context) symbol value)))
+(define (thru:thru symbol value) (throw (list (context) symbol value)))

@@ -20,14 +20,11 @@
   '.LIST 2
   '.LENGTH 3)
 
-(define (Cycle:Cycle lst)
-  (list (context) 0 lst (length lst)))
+(define (Cycle:Cycle lst) (list (context) 0 lst (length lst)))
 
-(define (Cycle:index)
-  (self .INDEX))
+(define (Cycle:index) (self .INDEX))
 
-(define (at)
-  ((self .LIST) (self .INDEX)))
+(define (at) ((self .LIST) (self .INDEX)))
 
 (define (at! newindex) (let (
   x (% newindex (self .LENGTH))

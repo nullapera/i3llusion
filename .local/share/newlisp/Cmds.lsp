@@ -22,13 +22,12 @@
 
 (constant '.CMDS 1)
 
-(define (Cmds:Cmds)
-  (list (context) (args)))
+(define (Cmds:Cmds) (list (context) (args)))
 
 (define (dry-run)
   (map (fn (cmd (lst '())) (: Cmd:dry-run cmd lst))
        (self .CMDS)
        (args)))
 
-(define (run)
-  (map exec (splat dry-run (args))))
+(define (run) (map exec (splat dry-run (args))))
+

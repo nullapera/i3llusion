@@ -60,8 +60,7 @@
 (macro (@kelvin) (first tix))
 (macro (@snooze) (last tix))
 
-(setq
-  ; M: Mode
+(setq ; M: Mode
   M:flx (Flags 4 0 1 1)
   M:memo '()
   M:cycle (Cycle '((0 0 0 1) (0 0 1 1) (0 1 0 1) (0 1 1 1)))
@@ -69,13 +68,13 @@
     "m" "Mode: UnFloating"
     "m+" "Mode: UnFloatingMemo"
     "M" "Mode: Floating"
-    "M+" "Mode: FloatingMemo")
-  ; P: Position
+    "M+" "Mode: FloatingMemo"))
+(setq ; P: Position
   P:flx (Flags 4)
   P:y 0
   P:height 0
-  P:cycle (Cycle '("center" "mouse" "upside"))
-  ; N: Nightlight
+  P:cycle (Cycle '("center" "mouse" "upside")))
+(setq ; N: Nightlight
   N:flx (Flags 4 0 1)
   N:on (Cmd {redshift} "-v -r -P -o -m randr -l 48.25:20.63 -t 6200:4200 2>&1")
   N:off (Cmd {redshift} "-x -m randr")
@@ -85,13 +84,13 @@
     "n" "Nightlight: Off"
     "N" "Nightlight:"
     nil nil
-    "!N" "!Nightlight")
-  ; C: Compositor
+    "!N" "!Nightlight"))
+(setq ; C: Compositor
   C:flx (Flags 4 0 1)
   C:on (Cmd {picom} "-b --config" (append i3path myname "-picom.conf"))
   C:off (Cmd {pkill} "picom")
-  C:texts '("c" "Compositor: Off" "C" "Compositor: On")
-  ; Z: snooZe
+  C:texts '("c" "Compositor: Off" "C" "Compositor: On"))
+(setq ; Z: snooZe
   Z:flx (Flags 4 0 1)
   Z:fullscreen_mode 0
   Z:timelimit 80
@@ -130,7 +129,7 @@
       )
       (while true
         (setq conn (net-accept socket))
-        (until (net-select conn "r" 30000))
+        (until (net-select conn "r" 35000))
         (net-receive conn data 256)
         (net-close conn)
         (send parent_pid data)))
@@ -367,10 +366,8 @@
         (format {%d px %d px}
           ReCT:_x
           (if
-            (<= ReCT:_height (- P:height yo))
-            (+ P:y yo)
-            (<= P:height ReCT:_height)
-            P:y
+            (<= ReCT:_height (- P:height yo)) (+ P:y yo)
+            (<= P:height ReCT:_height) P:y
             (- (+ P:y P:height) ReCT:_height))))
       (:at P:cycle))))
 
@@ -447,7 +444,7 @@
   (post-ins)
   (remit)
   (until flag
-    (until (net-select (:socket ipc4sub) "r" 10000)
+    (until (net-select (:socket ipc4sub) "r" 25000)
       (dolist (child_pid (receive))
         (receive child_pid data)
         (when (= child_pid polybar_pid)

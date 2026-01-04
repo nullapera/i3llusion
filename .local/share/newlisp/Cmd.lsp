@@ -16,13 +16,12 @@
   '.CMD 1
   '.ARGS 2)
 
-(define (Cmd:Cmd apath)
-  (list (context) apath (args)))
+(define (Cmd:Cmd apath) (list (context) apath (args)))
 
 (define (dry-run)
   (join (cons (self .CMD)
               (map string (flat (mesh (self .ARGS) (args)))))
         " "))
 
-(define (run)
-  (exec (splat dry-run (args))))
+(define (run) (exec (splat dry-run (args))))
+
