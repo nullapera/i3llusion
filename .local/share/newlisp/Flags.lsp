@@ -33,13 +33,13 @@
 
 (define (s idx) (string (self .FLAGS idx)))
 (define (n idx) (self .FLAGS idx))
-(define (b idx) (!= (self .FLAGS idx) 0))
+(define (b idx) (= (self .FLAGS idx) 1))
 
 (define (flag idx value)
   (setf (self .FLAGS idx) (if (or (null? value) (= value "0")) 0 1)))
 
 (define (not! idx)
-  (!= (setf (self .FLAGS idx) (if (zero? (self .FLAGS idx)) 1 0)) 0))
+  (= (setf (self .FLAGS idx) (if (zero? (self .FLAGS idx)) 1 0)) 1))
 
 (define (set*)
   (if (list? (args 0))

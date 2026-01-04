@@ -19,11 +19,9 @@
     (unless (net-connect apath)
       (throw-error (string (context) " => No connection to: '" apath "'")))))
 
-(define (socket)
-  (self .SOCKET))
+(define (socket) (self .SOCKET))
 
-(define (i3ipc:close)
-  (net-close (self .SOCKET)))
+(define (i3ipc:close) (net-close (self .SOCKET)))
 
 (define (i3ipc:send msgtype msg)
   (net-send
@@ -42,17 +40,12 @@
   (send msgtype msg)
   (receive))
 
-(define (command cmd)
-  (chat COMMAND cmd))
+(define (command cmd) (chat COMMAND cmd))
 
-(define (command-wid id cmd)
-  (chat COMMAND (format CMDFMT id cmd)))
+(define (command-wid id cmd) (chat COMMAND (format CMDFMT id cmd)))
 
-(define (subscribe msg)
-  (chat SUBSCRIBE msg))
+(define (subscribe msg) (chat SUBSCRIBE msg))
 
-(define (getworkspaces)
-  (chat GET_WORKSPACES ""))
+(define (getworkspaces) (chat GET_WORKSPACES ""))
 
-(define (gettree)
-  (chat GET_TREE ""))
+(define (gettree) (chat GET_TREE ""))

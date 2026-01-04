@@ -241,7 +241,7 @@
   json (json-parse (:gettree ipc))
   )
   (dolist (e (ref-all '("scratchpad_state" ?) json match))
-    (when (!= (json (append e '(1))) "none")
+    (unless (= (json (append e '(1))) "none")
       (setq x (first (lookup "nodes" (json (0 -1 e)))))
       (push (lookup "window" x) lst -1)))
   (when lst (let (
@@ -417,7 +417,7 @@
               "floating disable")))))))
 
 (define (on-move)
-  (when (!= BoX:_scratchpad_state "none") (let (
+  (unless (= BoX:_scratchpad_state "none") (let (
     lst (first BoX:_nodes)
     )
     (BoX lst)
