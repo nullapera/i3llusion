@@ -11,21 +11,20 @@
 ;;
 (context 'basename)
 
-(define (basename:basename path (xext "") ext? (rxo 0)) (let (
-  xt ""
-  bs (if
+(define (basename:basename path (xext "") ext? (rxo 0)) (letn (
+  obs (if
     (find path '("." ".." "/" "")) ""
     (regex {([^/]*)\z} path) $1
     "")
+  bs obs
   )
   (unless (or (empty? xext) (empty? bs))
     (replace
       (if (= xext ".*")
         {(?<!\A)(\.[^.]*)\z}
         (format {(?<!\A)(%s)\z} (replace "." xext "\\.")))
-      bs "" rxo)
-    (setq xt $1))
+      bs "" rxo))
   (if ext?
-    (if (= bs xt) (list bs "") (list bs xt))
+    (if (= bs obs) (list bs "") (list bs $1))
     bs)))
 
