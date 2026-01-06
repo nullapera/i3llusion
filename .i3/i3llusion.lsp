@@ -9,8 +9,7 @@
 
 (require "isinPATH")
 (isinPATH true
-  "notify-send" "picom" "pkill" "ps" "redshift" "systemctl"
-  "xautolock" "xprop" "xset")
+  "notify-send" "picom" "pkill" "ps" "redshift" "systemctl" "xprop" "xset")
 
 (require "dirname")
 
@@ -35,7 +34,7 @@
       (throw-error (append "Can not be deleted! : '" i3ipcpath "'")))))
 
 (require
-  "Flags" "Cmds" "Cycle" "Slider" "permutations"
+  "Flags" "Cmd" "Cycle" "Slider" "permutations"
   "case-match" "mutuple" "i3llusion/i3ipc")
 
 (setq
@@ -95,13 +94,8 @@
   Z:fullscreen_mode 0
   Z:timelimit 80
   Z:timecounter Z:timelimit
-  Z:on (Cmds
-    (Cmd {xset} "s 360 360 dpms 480 480 480")
-    (Cmd {xautolock} "-enable"))
-  Z:off (Cmds
-    (Cmd {xset} "s off -dpms")
-    (Cmd {xautolock} "-disable"))
-  Z:lock (Cmd {xautolock} "-locknow")
+  Z:on (Cmd {xset} "s 360 360 dpms 480 480 480")
+  Z:off (Cmd {xset} "s off -dpms")
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
 
@@ -168,7 +162,6 @@
 
 (define (systemctl cmd)
   (timer (fn ()
-    (:run Z:lock)
     (setq Z:timecounter Z:timelimit)
     (:counter! (@snooze) (:limit (@snooze)))
     (:counter! (@kelvin) 0)
@@ -436,7 +429,7 @@
 
 ; main loop
 (local (flag data json)
-  (map delete '(dirname isinPATH mutuple permutations))
+  (map delete '(dirname include isinPATH mutuple permutations require))
   (:run C:off)
   (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})
