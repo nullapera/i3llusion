@@ -5,7 +5,7 @@
 ;;  (basename "/p1/p2/p3/base.ext") => "base.ext"
 ;;  (basename "/p1/p2/p3/base.ext" ".ext") => "base"
 ;;  (basename "/p1/p2/p3/base.Ext" ".ext") => "base.Ext"
-;;  (basename "/p1/p2/p3/base.Ext" ".ext" nil 1) => "base"
+;;  (basename "/p1/p2/p3/base.Ext" ".ext" true 1) => ("base" ".Ext")
 ;;  (basename "/p1/p2/p3/base.any" ".*") => "base"
 ;;  (basename "/p1/p2/p3/base.any" ".*" true) => ("base" ".any")
 ;;
@@ -25,6 +25,6 @@
         (format {(?<!\A)(%s)\z} (replace "." xext "\\.")))
       bs "" rxo))
   (if ext?
-    (if (= bs obs) (list bs "") (list bs $1))
+    (list bs (if (= bs obs) "" $1))
     bs)))
 
