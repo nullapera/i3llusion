@@ -52,7 +52,7 @@
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id")
   tix '((MAIN:Tix 0 60 (when (and (:b N:flx 1) (not (:b N:flx 0)))
                          (kelvinize)))
-        (MAIN:Tix 0 60 (post-outs))
+        (MAIN:Tix 0 60 (when (:b A:flx 1) (post-outs)))
         (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime)))))
 
 (mutuple {Tix} "counter limit func")
@@ -96,8 +96,12 @@
   Z:timecounter Z:timelimit
   Z:on (Cmd {xset} "s 360 360 dpms 480 480 480")
   Z:off (Cmd {xset} "s off -dpms")
+
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
+(setq ; A: Autosave
+  A:flx (Flags 4 0 1)
+  A:texts '("a" "Autosave: Off" "A" "Autosave: On"))
 
 (let (pth (append i3path myname "-msg.lsp"))
   (setq letters_fmt (append
@@ -155,6 +159,7 @@
       (envelope "Z_c" (append "<  " (:at Z:cycle))))
     (envelope "Z_d"
       (format (if (:b Z:flx 1) {Z%.1f} {z%.1f}) (div Z:timecounter 10))))
+  (envelope "A" (A:texts (:to-int A:flx '(1 3))))
   (write-line 1 (join letters))))
 
 (define (kelvinize)
@@ -178,10 +183,9 @@
 
 (define (post-outs) (let (
   flag true
-  lst (list
-    (:to-nums M:flx) (:to-nums P:flx) (:to-nums N:flx)
-    (:to-nums C:flx) (:to-nums Z:flx) (:index P:cycle)
-    (:value N:slider) Z:timelimit (:index Z:cycle))
+  lst (append
+    (map (fn (a) (:to-nums (context a 'flx))) '(M P N C Z A))
+    (list (:index P:cycle) (:value N:slider) Z:timelimit (:index Z:cycle)))
   )
   (unless (write-file i3memo (string M:memo))
     (setq flag nil)
@@ -202,28 +206,29 @@
   (when (file? i3cond)
     (if (setq data (read-file i3cond))
       (let (lst (parse data "\n"))
-        (dolist (e '(M P N C Z))
-          (:set* (context e 'flx) (read-expr (lst $idx))))
+        (dolist (e '(M P N C Z A))
+          (:set* (context e 'flx) (read-expr (pop lst))))
         (:set-to M:cycle (setf (nth 3 (:to-nums M:flx)) 1))
-        (:at! P:cycle (int (lst 5)))
-        (when (:b N:flx 0)
-          (:run N:manual (string (:value! N:slider (int (lst 6))))))
+        (:at! P:cycle (int (pop lst)))
+        (if (:b N:flx 0)
+          (:run N:manual (string (:value! N:slider (int (pop lst)))))
+          (pop lst))
         (when (:b C:flx 1)
           (:run C:on))
-        (setq Z:timelimit (int (lst 7))
+        (setq Z:timelimit (int (pop lst))
               Z:timecounter Z:timelimit)
         (when (:b Z:flx 1)
           (:run Z:on))
-        (:at! Z:cycle (int (lst 8))))
+        (:at! Z:cycle (int (pop lst))))
       (:run notify {critical}
         (append "'post-ins: Can not read from " i3cond "!'"))))))
 
 (define (remit) (local (flag)
   (timer 'remit 6)
-  (dotimes (e 3)
-    (when (<= (:counter! (tix e) --) 0)
-      (:counter! (tix e) (:limit (tix e)))
-      (eval (:func (tix e)))
+  (dolist (e tix)
+    (when (<= (:counter! (tix $idx) --) 0)
+      (:counter! (tix $idx) (:limit e))
+      (eval (:func e))
       (setq flag true)))
   (when flag
     (letters2polybar))))
@@ -341,6 +346,11 @@
         (-- Z:timecounter)
         (:counter! (@snooze) (:limit (@snooze)))
         (checktime))))
+    ("A" (case (first tail)
+      ("1" (:not! A:flx 1))
+      ("2" (when (post-outs)
+        (:run notify {normal} "'post-outs: saved by user request!'")))
+      ("3" (:not! A:flx 3))))
     ("X" (case (first tail)
       ("8" (setq flag true))
       ("postouts" (when (post-outs)
