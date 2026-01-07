@@ -55,7 +55,7 @@
 (setq tix
   '((MAIN:Tix 0 60 (when (and (:b N:flx 1) (not (:b N:flx 0)))
                      (kelvinize)))
-    (MAIN:Tix 0 60 (when (:b A:flx 1) (post-outs)))
+    (MAIN:Tix 0 60 (when (and (:b A:flx 1) (:b A:flx 4)) (post-outs)))
     (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime)))))
 (macro (@kelvin) (first tix))
 (macro (@snooze) (last tix))
@@ -99,9 +99,9 @@
   Z:off (Cmd {xset} "s off -dpms")
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
-(setq ; A: Autosave
-  A:flx (Flags 4 0 1)
-  A:texts '("a" "Autosave: Off" "A" "Autosave: On"))
+(setq ; A: Auto{save,memo}
+  A:flx (Flags 6 0 1 0 0 1 1)
+  A:texts '("a" "a" "a" "a" "Asm" "AsM" "ASm" "ASM"))
 
 (let (pth (append i3path myname "-msg.lsp"))
   (setq letters_fmt (append
@@ -154,12 +154,18 @@
   (envelope "C" (C:texts (:to-int C:flx '(1 3))))
   (if (:b Z:flx 3)
     (begin
-      (envelope "Z_a" (if (:b Z:flx 1) "snooZe: lock" "snooZe: unlock"))
+      (envelope "Z_a" (if (:b Z:flx 1) "snooZe: lock" "snooZe: UNlock"))
       (envelope "Z_b" (format {<  %.1fhrs} (div Z:timelimit 10)))
       (envelope "Z_c" (append "<  " (:at Z:cycle))))
     (envelope "Z_d"
       (format (if (:b Z:flx 1) {Z%.1f} {z%.1f}) (div Z:timecounter 10))))
-  (envelope "A" (A:texts (:to-int A:flx '(1 3))))
+  (if (:b A:flx 3)
+    (begin
+      (envelope "A_a" (if (:b A:flx 1) "Auto:" "Auto: Off"))
+      (when (:b A:flx 1)
+        (envelope "A_b" (if (:b A:flx 4) "SavE," "save,"))
+        (envelope "A_c" (if (:b A:flx 5) "MemO" "memo"))))
+    (envelope "A_a" (A:texts (:to-int A:flx '(1 4 5)))))
   (write-line 1 (join letters))))
 
 (define (kelvinize)
@@ -171,6 +177,8 @@
     (:counter! (@snooze) (:limit (@snooze)))
     (:counter! (@kelvin) 0)
     (remit)) 6)
+  (when (and (:b A:flx 1) (:b A:flx 4))
+    (post-outs))
   (:run Z:systemctl cmd))
 
 (define (checktime)
@@ -274,17 +282,7 @@
   )
   (when (= (lookup "type" fcsd) "con")
     (BoX fcsd)
-    (PRoP BoX:_window_properties)
-    (letn (
-      rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
-      idx (find rec M:memo)
-      r (list (:n M:flx 1) (true? idx) BoX:_floating)
-      )
-      (if
-        (= '(1 true "user_on") r) (pop M:memo idx)
-        (= '(1 nil "user_off") r) (push rec M:memo)
-        (= '(0 true "user_off") r) (pop M:memo idx)
-        (= '(0 nil "user_on") r) (push rec M:memo))))))
+    (on-close))))
 
 (define (lettershop stamp) (letn (
   flag nil
@@ -346,11 +344,13 @@
         (-- Z:timecounter)
         (:counter! (@snooze) (:limit (@snooze)))
         (checktime))))
-    ("A" (case (first tail)
-      ("1" (:not! A:flx 1))
-      ("2" (when (post-outs)
+    ("A" (case-match (r tail)
+      ('(? "1") (:not! A:flx 1))
+      ('(? "2") (when (post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")))
-      ("3" (:not! A:flx 3))))
+      ('(? "3") (:not! A:flx 3))
+      ('("b" ?) (:not! A:flx 4))
+      ('("c" ?) (:not! A:flx 5))))
     ("X" (case (first tail)
       ("8" (setq flag true))
       ("postouts" (when (post-outs)
@@ -429,6 +429,20 @@
     (when (ends-with BoX:_floating "on")
       (:run xprop (string BoX:_window))))))
 
+(define (on-close)
+  (when (and (:b A:flx 1) (:b A:flx 5))
+    (PRoP BoX:_window_properties)
+    (letn (
+      rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
+      idx (find rec M:memo)
+      r (list (:n M:flx 1) (true? idx) BoX:_floating)
+      )
+      (if
+        (= '(1 true "user_on") r) (pop M:memo idx)
+        (= '(1 nil "user_off") r) (push rec M:memo)
+        (= '(0 true "user_off") r) (pop M:memo idx)
+        (= '(0 nil "user_on") r) (push rec M:memo)))))
+
 (define (on-workspace-focus) (letn (
   json (json-parse (:getworkspaces ipc))
   fcsd (json (0 -1 (ref '("focused" true) json match)))
@@ -460,13 +474,15 @@
         ("focus" (BoX data) (on-fullscreen))
         ("new" (BoX data) (on-new))
         ("floating" (BoX data) (on-floating))
+        ("close" (BoX data) (on-close))
         ("move" (BoX data) (on-move))
         ("fullscreen_mode" (BoX data) (on-fullscreen)))
       (when (setq data  (lookup "current" json))
         (case (lookup "change" json)
           ("focus" (on-workspace-focus))))))
   (:close ipc)
-  (:close ipc4sub))
+  (:close ipc4sub)
+  (post-outs))
 
 (abort)
 (exit)
