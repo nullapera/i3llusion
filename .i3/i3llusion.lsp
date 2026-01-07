@@ -11,9 +11,9 @@
 (isinPATH true
   "notify-send" "picom" "pkill" "ps" "redshift" "systemctl" "xprop" "xset")
 
-(require "dirname")
-
 (context 'i3llusion)
+
+(require "dirname")
 
 (setq
   myname (string (context))
@@ -49,13 +49,14 @@
   i3cond (append i3path myname "-cond.dat")
   notify (Cmd {notify-send} "-u" myname)
   xprop (Cmd {xprop}
-    "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id")
-  tix '((MAIN:Tix 0 60 (when (and (:b N:flx 1) (not (:b N:flx 0)))
-                         (kelvinize)))
-        (MAIN:Tix 0 60 (when (:b A:flx 1) (post-outs)))
-        (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime)))))
+    "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
 
 (mutuple {Tix} "counter limit func")
+(setq tix
+  '((MAIN:Tix 0 60 (when (and (:b N:flx 1) (not (:b N:flx 0)))
+                     (kelvinize)))
+    (MAIN:Tix 0 60 (when (:b A:flx 1) (post-outs)))
+    (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime)))))
 (macro (@kelvin) (first tix))
 (macro (@snooze) (last tix))
 
@@ -96,7 +97,6 @@
   Z:timecounter Z:timelimit
   Z:on (Cmd {xset} "s 360 360 dpms 480 480 480")
   Z:off (Cmd {xset} "s off -dpms")
-
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
 (setq ; A: Autosave
