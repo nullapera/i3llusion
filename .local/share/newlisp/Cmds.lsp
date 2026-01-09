@@ -30,4 +30,3 @@
        (args)))
 
 (define (run) (map exec (splat dry-run (args))))
-

@@ -27,4 +27,3 @@
   (if ext?
     (list bs (if (= bs obs) "" $1))
     bs)))
-

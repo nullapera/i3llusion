@@ -54,7 +54,7 @@
 (mutuple {Tix} "counter limit func")
 (setq tix
   '((MAIN:Tix 0 60 (when (and (:b N:flx 1) (not (:b N:flx 0)))
-                     (kelvinize)))
+                     (make-kelvin)))
     (MAIN:Tix 0 60 (when (and (:b A:flx 1) (:b A:flx 4)) (post-outs)))
     (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime)))))
 (macro (@kelvin) (first tix))
@@ -84,7 +84,7 @@
     "n" "Nightlight: Off"
     "N" "Nightlight:"
     nil nil
-    "!N" "!Nightlight"))
+    "!N" "!Nightlight:"))
 (setq ; C: Compositor
   C:flx (Flags 4 0 1)
   C:on (Cmd {picom} "-b --config" (append i3path myname "-picom.conf"))
@@ -135,9 +135,9 @@
 
 (define (letters2polybar) (let (
   letters '()
-  envelope (lambda (letter text)
-    (push (format letters_fmt letter letter letter letter letter
-                  (:at colors) text)
+  envelope (lambda (letter text) (push
+    (format letters_fmt letter letter letter letter letter
+            (:at colors) text)
           letters -1))
   )
   (:step colors -1)
@@ -168,7 +168,7 @@
     (envelope "A_a" (A:texts (:to-int A:flx '(1 4 5)))))
   (write-line 1 (join letters))))
 
-(define (kelvinize)
+(define (make-kelvin)
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
 
 (define (systemctl cmd)
@@ -276,13 +276,26 @@
             (:run xprop (string x)))))
       (:command ipc "scratchpad show"))))))
 
+(define (make-memo)
+  (PRoP BoX:_window_properties)
+  (letn (
+    rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
+    idx (find rec M:memo)
+    r (list (:n M:flx 1) (true? idx) BoX:_floating)
+    )
+    (if
+      (= '(1 true "user_on") r) (pop M:memo idx)
+      (= '(1 nil "user_off") r) (push rec M:memo)
+      (= '(0 true "user_off") r) (pop M:memo idx)
+      (= '(0 nil "user_on") r) (push rec M:memo))))
+
 (define (toggle-memo) (letn (
   json (json-parse (:gettree ipc))
   fcsd (json (0 -1 (ref '("focused" true) json match)))
   )
   (when (= (lookup "type" fcsd) "con")
     (BoX fcsd)
-    (on-close))))
+    (make-memo))))
 
 (define (lettershop stamp) (letn (
   flag nil
@@ -310,11 +323,11 @@
         (if (:not! N:flx 1)
           (begin
             (:counter! (@kelvin) (:limit (@kelvin)))
-            (kelvinize))
+            (make-kelvin))
           (:run N:off)))
       ('(? "2") (when (:b N:flx 0)
         (:counter! (@kelvin) (:limit (@kelvin)))
-        (kelvinize)
+        (make-kelvin)
         (:flag N:flx 0 nil)))
       ('(? "3") (:not! N:flx 3))
       ('("b" "4")
@@ -431,17 +444,7 @@
 
 (define (on-close)
   (when (and (:b A:flx 1) (:b A:flx 5))
-    (PRoP BoX:_window_properties)
-    (letn (
-      rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
-      idx (find rec M:memo)
-      r (list (:n M:flx 1) (true? idx) BoX:_floating)
-      )
-      (if
-        (= '(1 true "user_on") r) (pop M:memo idx)
-        (= '(1 nil "user_off") r) (push rec M:memo)
-        (= '(0 true "user_off") r) (pop M:memo idx)
-        (= '(0 nil "user_on") r) (push rec M:memo)))))
+    (make-memo)))
 
 (define (on-workspace-focus) (letn (
   json (json-parse (:getworkspaces ipc))
