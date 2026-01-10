@@ -34,8 +34,7 @@
       (throw-error (append "Can not be deleted! : '" i3ipcpath "'")))))
 
 (require
-  "Flags" "Cmd" "Cycle" "Slider" "permutations"
-  "case-match" "mutuple" "i3llusion/i3ipc")
+  "Flags" "Cmd" "Cycle" "Slider" "permutations" "case-match" "i3llusion/i3ipc")
 
 (setq
   scratcheds '()
@@ -51,15 +50,15 @@
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
 
-(mutuple {Tix} "counter limit func")
+(constant
+  '.COUNTER 0 '.FUNC 1 'LIMIT 60)
 (setq tix
-  '((MAIN:Tix 0 60 (when (and (:b N:flx 1) (not (:b N:flx 0)))
-                     (make-kelvin)))
-    (MAIN:Tix 0 60 (when (and (:b A:flx 1) (:b A:flx 4)) (post-outs)))
-    (MAIN:Tix 60 60 (begin (-- Z:timecounter) (checktime)))))
-(macro (@kelvin) (first tix))
-(macro (@postouts) (tix 1))
-(macro (@snooze) (last tix))
+  '((0 (when (and (:b N:flx 1) (not (:b N:flx 0))) (make-kelvin)))
+    (0 (when (and (:b A:flx 1) (:b A:flx 4)) (post-outs)))
+    (60 (begin (-- Z:timecounter) (checktime)))))
+(macro (@kelvin IDX) (tix 0 IDX))
+(macro (@postouts IDX) (tix 1 IDX))
+(macro (@snooze IDX) (tix -1 IDX))
 
 (setq ; M: Mode
   M:flx (Flags 4 0 1 1)
@@ -96,7 +95,7 @@
   Z:fullscreen_mode 0
   Z:timelimit 80
   Z:timecounter Z:timelimit
-  Z:on (Cmd {xset} "s 360 360 dpms 480 480 480")
+  Z:on (Cmd {xset} "s 360 360 dpms 480 600 720")
   Z:off (Cmd {xset} "s off -dpms")
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
@@ -175,12 +174,12 @@
 (define (systemctl cmd)
   (timer (fn ()
     (setq Z:timecounter Z:timelimit)
-    (:counter! (@snooze) (:limit (@snooze)))
-    (:counter! (@kelvin) 0)
+    (setf (@snooze .COUNTER) LIMIT
+          (@kelvin .COUNTER) 0)
     (remit)) 6)
   (when (and (:b A:flx 1) (:b A:flx 4))
     (post-outs)
-    (:counter! (@postouts) (:limit (@postouts))))
+    (setf (@postouts .COUNTER) LIMIT))
   (:run Z:systemctl cmd))
 
 (define (checktime)
@@ -236,9 +235,9 @@
 (define (remit) (local (flag)
   (timer 'remit 6)
   (dolist (e tix)
-    (when (<= (:counter! (tix $idx) --) 0)
-      (:counter! (tix $idx) (:limit e))
-      (eval (:func e))
+    (when (<= (-- (tix $idx .COUNTER)) 0)
+      (setf (tix $idx .COUNTER) LIMIT)
+      (eval (e .FUNC))
       (setq flag true)))
   (when flag
     (letters2polybar))))
@@ -324,11 +323,11 @@
         (:flag N:flx 0 nil)
         (if (:not! N:flx 1)
           (begin
-            (:counter! (@kelvin) (:limit (@kelvin)))
+            (setf (@kelvin .COUNTER) LIMIT)
             (make-kelvin))
           (:run N:off)))
       ('(? "2") (when (:b N:flx 0)
-        (:counter! (@kelvin) (:limit (@kelvin)))
+        (setf (@kelvin .COUNTER) LIMIT)
         (make-kelvin)
         (:flag N:flx 0 nil)))
       ('(? "3") (:not! N:flx 3))
@@ -345,7 +344,7 @@
       ('(? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
       ('(? "2")
         (setq Z:timecounter Z:timelimit)
-        (:counter! (@snooze) (:limit (@snooze)))
+        (setf (@snooze .COUNTER) LIMIT)
         (checktime))
       ('(? "3") (:not! Z:flx 3))
       ('("b" "4") (++ Z:timelimit))
@@ -354,16 +353,16 @@
       ('("c" "5") (:step Z:cycle -1))
       ('("d" "4")
         (++ Z:timecounter)
-        (:counter! (@snooze) (:limit (@snooze))))
+        (setf (@snooze .COUNTER) LIMIT))
       ('("d" "5")
         (-- Z:timecounter)
-        (:counter! (@snooze) (:limit (@snooze)))
+        (setf (@snooze .COUNTER) LIMIT)
         (checktime))))
     ("A" (case-match (r tail)
       ('(? "1") (:not! A:flx 1))
       ('(? "2") (when (post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
-        (:counter! (@postouts) (:limit (@postouts)))))
+        (setf (@postouts .COUNTER) LIMIT)))
       ('(? "3") (:not! A:flx 3))
       ('("b" ?) (:not! A:flx 4))
       ('("c" ?) (:not! A:flx 5))))
@@ -371,7 +370,7 @@
       ("8" (setq flag true))
       ("postouts" (when (post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
-        (:counter! (@postouts) (:limit (@postouts)))))
+        (setf (@postouts .COUNTER) LIMIT)))
       ("propeller" (propeller))
       ("polytoggle" (on-workspace-focus))
       ("togglememo" (toggle-memo))
@@ -421,9 +420,9 @@
   (when (or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
     (PRoP BoX:_window_properties)
     (let (
-      fnd (true? (find (list PRoP:_class PRoP:_instance (:n M:flx 1)) M:memo))
+      idx (find (list PRoP:_class PRoP:_instance (:n M:flx 1)) M:memo)
       )
-      (case-match (r (list (:n M:flx 1) (:n M:flx 2) fnd))
+      (case-match (r (list (:n M:flx 1) (:n M:flx 2) (true? idx)))
         ('(1 1 true)
           (:command-wid ipc BoX:_window "floating disable"))
         ('(0 1 true)
@@ -460,7 +459,7 @@
 
 ; main loop
 (local (flag data json)
-  (map delete '(dirname include isinPATH mutuple permutations require))
+  (map delete '(dirname include isinPATH permutations require))
   (:run C:off)
   (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})
