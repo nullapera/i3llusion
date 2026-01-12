@@ -287,6 +287,10 @@
       (= '(0 true "user_off") r) (pop M:memo idx)
       (= '(0 nil "user_on") r) (push rec M:memo))))
 
+(define (auto-memo)
+  (when (and (:b A:flx 1) (:b A:flx 5))
+    (make-memo)))
+
 (define (toggle-memo) (letn (
   json (json-parse (:gettree ipc))
   fcsd (json (0 -1 (ref '("focused" true) json match)))
@@ -370,6 +374,7 @@
         (setf (TX:postouts .COUNTER) LIMIT)))
       ("propeller" (propeller))
       ("polytoggle" (on-workspace-focus))
+      ("automemo" (auto-memo))
       ("togglememo" (toggle-memo))
       (true (systemctl (first tail))))))
   flag))
@@ -442,10 +447,6 @@
     (when (ends-with BoX:_floating "on")
       (:run xprop (string BoX:_window))))))
 
-(define (on-close)
-  (when (and (:b A:flx 1) (:b A:flx 5))
-    (make-memo)))
-
 (define (on-workspace-focus) (letn (
   json (json-parse (:getworkspaces ipc))
   fcsd (json (0 -1 (ref '("focused" true) json match)))
@@ -477,7 +478,6 @@
         ("focus" (BoX data) (on-fullscreen))
         ("new" (BoX data) (on-new))
         ("floating" (BoX data) (on-floating))
-        ("close" (BoX data) (on-close))
         ("move" (BoX data) (on-move))
         ("fullscreen_mode" (BoX data) (on-fullscreen)))
       (when (setq data  (lookup "current" json))
