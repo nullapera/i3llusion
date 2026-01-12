@@ -287,15 +287,12 @@
       (= '(0 true "user_off") r) (pop M:memo idx)
       (= '(0 nil "user_on") r) (push rec M:memo))))
 
-(define (auto-memo)
-  (when (and (:b A:flx 1) (:b A:flx 5))
-    (make-memo)))
-
 (define (toggle-memo) (letn (
   json (json-parse (:gettree ipc))
-  fcsd (json (0 -1 (ref '("focused" true) json match)))
+  rf (ref '("focused" true) json match)
+  fcsd (when rf (json (0 -1 rf)))
   )
-  (when (= (lookup "type" fcsd) "con")
+  (when (and fcsd (= (lookup "type" fcsd) "con"))
     (BoX fcsd)
     (make-memo))))
 
@@ -374,7 +371,8 @@
         (setf (TX:postouts .COUNTER) LIMIT)))
       ("propeller" (propeller))
       ("polytoggle" (on-workspace-focus))
-      ("automemo" (auto-memo))
+      ("automemo" (when (and (:b A:flx 1) (:b A:flx 5))
+        (toggle-memo)))
       ("togglememo" (toggle-memo))
       (true (systemctl (first tail))))))
   flag))
@@ -485,7 +483,8 @@
           ("focus" (on-workspace-focus))))))
   (:close ipc)
   (:close ipc4sub)
-  (post-outs))
+  (when (and (:b A:flx 1) (:b A:flx 4))
+    (post-outs)))
 
 (abort)
 (exit)
