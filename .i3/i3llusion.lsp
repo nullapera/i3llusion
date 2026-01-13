@@ -248,10 +248,11 @@
     (unless (= (json (append e '(1))) "none")
       (setq x (first (lookup "nodes" (json (0 -1 e)))))
       (push (lookup "window" x) lst -1)))
-  (when lst (let (
-    fcsd (json (0 -1 (ref '("focused" true) json match)))
+  (when lst (letn (
+    rf (ref '("focused" true) json match)
+    fcsd (when rf (json (0 -1 rf)))
     )
-    (if (= (lookup "type" fcsd) "con")
+    (if (and fcsd (= (lookup "type" fcsd) "con"))
       (let (
         fwid (lookup "window" fcsd)
         ffon (ends-with (lookup "floating" fcsd) "on")
@@ -274,19 +275,6 @@
             (:run xprop (string x)))))
       (:command ipc "scratchpad show"))))))
 
-(define (make-memo)
-  (PRoP BoX:_window_properties)
-  (letn (
-    rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
-    idx (find rec M:memo)
-    r (list (:n M:flx 1) (true? idx) BoX:_floating)
-    )
-    (if
-      (= '(1 true "user_on") r) (pop M:memo idx)
-      (= '(1 nil "user_off") r) (push rec M:memo)
-      (= '(0 true "user_off") r) (pop M:memo idx)
-      (= '(0 nil "user_on") r) (push rec M:memo))))
-
 (define (toggle-memo) (letn (
   json (json-parse (:gettree ipc))
   rf (ref '("focused" true) json match)
@@ -294,7 +282,17 @@
   )
   (when (and fcsd (= (lookup "type" fcsd) "con"))
     (BoX fcsd)
-    (make-memo))))
+    (PRoP BoX:_window_properties)
+    (letn (
+      rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
+      idx (find rec M:memo)
+      r (list (:n M:flx 1) (true? idx) BoX:_floating)
+      )
+      (if
+        (= '(1 true "user_on") r) (pop M:memo idx)
+        (= '(1 nil "user_off") r) (push rec M:memo)
+        (= '(0 true "user_off") r) (pop M:memo idx)
+        (= '(0 nil "user_on") r) (push rec M:memo))))))
 
 (define (lettershop stamp) (letn (
   flag nil
