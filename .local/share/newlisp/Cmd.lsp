@@ -12,9 +12,7 @@
 
 (context 'Cmd)
 
-(constant
-  '.CMD 1
-  '.ARGS 2)
+(constant '.CMD 1 '.ARGS 2)
 
 (define (Cmd:Cmd apath) (list (context) apath (args)))
 

@@ -11,6 +11,5 @@
   rslt (dup '() (apply max (map length (args))))
   )
   (doargs (lst)
-    (dolist (e lst)
-      (push e (rslt $idx) -1)))
+    (dolist (e lst) (push e (rslt $idx) -1)))
   rslt))

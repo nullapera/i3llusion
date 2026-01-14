@@ -23,29 +23,24 @@
 
 (context Slider)
 
-(constant
-  '.VALUE 1
-  '.DEFAULT 2
-  '.MIN 3
-  '.MAX 4
-  '.STEP 5)
+(constant '.VALUE 1 '.DEFAULT 2 '.MIN 3 '.MAX 4 '.STEP 5)
 
 (define (Slider:Slider (defaultval 0) (minval 0) (maxval 100) (stepval 1))
   (list (context) defaultval defaultval minval maxval (abs stepval)))
 
 (define (value! newval)
-  (setf (self .VALUE) (min
-    (max (or newval (self .DEFAULT)) (self .MIN))
-    (self .MAX))))
+  (setf (self .VALUE)
+        (min (max (or newval (self .DEFAULT)) (self .MIN))
+             (self .MAX))))
 
 (define (valueR newval) (letn (
   s (self .STEP)
   r (% newval s)
   )
-  (value! (if (zero? r)
-    newval
-    (+ (- newval r)
-       (if (< (/ s 2) (abs r)) (* (sgn newval) s) 0))))))
+  (value!
+    (if (zero? r)
+      newval
+      (+ (- newval r) (if (< (/ s 2) (abs r)) (* (sgn newval) s) 0))))))
 
 (define (step n)
   (if (null? n)

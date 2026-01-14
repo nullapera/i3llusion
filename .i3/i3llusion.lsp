@@ -133,9 +133,8 @@
 (define (letters2polybar) (let (
   letters '()
   envelope (lambda (letter text) (push
-    (format letters_fmt letter letter letter letter letter
-            (:at colors) text)
-          letters -1))
+    (format letters_fmt letter letter letter letter letter (:at colors) text)
+    letters -1))
   )
   (:step colors -1)
   (envelope "M" (M:texts (:to-int M:flx 1 3)))
@@ -143,8 +142,7 @@
     (if (:b P:flx 3)
       "Position:"
       (append "P" (first (:at P:cycle)))))
-  (when (:b P:flx 3)
-    (envelope "P_b" (:at P:cycle)))
+  (when (:b P:flx 3) (envelope "P_b" (:at P:cycle)))
   (envelope "N_a" (N:texts (:to-int N:flx '(0 1 3))))
   (when (and (:b N:flx 3) (:b N:flx 1))
     (envelope "N_b" (format {%dK} (:value N:slider))))
@@ -219,12 +217,10 @@
         (if (:b N:flx 0)
           (:run N:manual (string (:value! N:slider (int (pop lst)))))
           (pop lst))
-        (when (:b C:flx 1)
-          (:run C:on))
+        (when (:b C:flx 1) (:run C:on))
         (setq Z:timelimit (int (pop lst))
               Z:timecounter Z:timelimit)
-        (when (:b Z:flx 1)
-          (:run Z:on))
+        (when (:b Z:flx 1) (:run Z:on))
         (:at! Z:cycle (int (pop lst))))
       (:run notify {critical}
         (append "'post-ins: Can not read from " i3cond "!'"))))))
@@ -236,8 +232,7 @@
       (setf ((eval e) .COUNTER) LIMIT)
       (eval ((eval e) .FUNC))
       (setq flag true)))
-  (when flag
-    (letters2polybar))))
+  (when flag (letters2polybar))))
 
 (define (propeller) (let (
   x nil
@@ -271,8 +266,7 @@
             (if ffon
               "border pixel 6, floating enable"
               "border none, floating disable"))
-          (when ffon
-            (:run xprop (string x)))))
+          (when ffon (:run xprop (string x)))))
       (:command ipc "scratchpad show"))))))
 
 (define (toggle-memo) (letn (
@@ -284,15 +278,15 @@
     (BoX fcsd)
     (PRoP BoX:_window_properties)
     (letn (
-      rec (list PRoP:_class PRoP:_instance (:n M:flx 1))
+      rec (list PRoP:_class PRoP:_instance (:b M:flx 1))
       idx (find rec M:memo)
-      r (list (:n M:flx 1) (true? idx) BoX:_floating)
+      r (list (:b M:flx 1) (true? idx) BoX:_floating)
       )
       (if
-        (= '(1 true "user_on") r) (pop M:memo idx)
-        (= '(1 nil "user_off") r) (push rec M:memo)
-        (= '(0 true "user_off") r) (pop M:memo idx)
-        (= '(0 nil "user_on") r) (push rec M:memo))))))
+        (= '(true true "user_on") r) (pop M:memo idx)
+        (= '(true nil "user_off") r) (push rec M:memo)
+        (= '(nil true "user_off") r) (pop M:memo idx)
+        (= '(nil nil "user_on") r) (push rec M:memo))))))
 
 (define (lettershop stamp) (letn (
   flag nil
@@ -369,8 +363,7 @@
         (setf (TX:postouts .COUNTER) LIMIT)))
       ("propeller" (propeller))
       ("polytoggle" (on-workspace-focus))
-      ("automemo" (when (and (:b A:flx 1) (:b A:flx 5))
-        (toggle-memo)))
+      ("automemo" (when (and (:b A:flx 1) (:b A:flx 5)) (toggle-memo)))
       ("togglememo" (toggle-memo))
       (true (systemctl (first tail))))))
   flag))
@@ -380,8 +373,7 @@
     (if (= (:at P:cycle) "upside")
       (let (yo (mul P:height lt1))
         (ReCT BoX:_rect)
-        (format {%d px %d px}
-          ReCT:_x
+        (format {%d px %d px} ReCT:_x
           (if
             (<= ReCT:_height (- P:height yo)) (+ P:y yo)
             (<= P:height ReCT:_height) P:y
@@ -418,20 +410,18 @@
   (when (or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
     (PRoP BoX:_window_properties)
     (let (
-      idx (find (list PRoP:_class PRoP:_instance (:n M:flx 1)) M:memo)
+      idx (find (list PRoP:_class PRoP:_instance (:b M:flx 1)) M:memo)
       )
-      (case-match (r (list (:n M:flx 1) (:n M:flx 2) (true? idx)))
-        ('(1 1 true)
+      (case-match (r (list (:b M:flx 1) (:b M:flx 2) (true? idx)))
+        ('(true true true)
           (:command-wid ipc BoX:_window "floating disable"))
-        ('(0 1 true)
+        ('(nil true true)
           (:command-wid ipc BoX:_window "floating enable"))
-        ('(1 ? ?)
+        ('(true ? ?)
           (:command-wid ipc BoX:_window "floating enable"))
         ('(*)
           (:command-wid ipc BoX:_window
-            (if (check-wcwi)
-              "floating enable"
-              "floating disable")))))))
+            (if (check-wcwi) "floating enable" "floating disable")))))))
 
 (define (on-move)
   (unless (= BoX:_scratchpad_state "none") (let (
@@ -481,8 +471,7 @@
           ("focus" (on-workspace-focus))))))
   (:close ipc)
   (:close ipc4sub)
-  (when (and (:b A:flx 1) (:b A:flx 4))
-    (post-outs)))
+  (when (and (:b A:flx 1) (:b A:flx 4)) (post-outs)))
 
 (abort)
 (exit)

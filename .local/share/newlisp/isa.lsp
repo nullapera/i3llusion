@@ -10,7 +10,4 @@
 (context 'isa)
 
 (define (isa:isa obj ctx)
-  (and (list? obj)
-       (true? obj)
-       (context? ctx)
-       (= (first obj) ctx)))
+  (and (list? obj) (true? obj) (context? ctx) (= (first obj) ctx)))

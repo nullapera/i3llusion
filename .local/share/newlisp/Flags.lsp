@@ -27,8 +27,7 @@
 (define (Flags:Flags nsize) (let (
   obj (list (context) (dup nil nsize))
   )
-  (doargs (e)
-    (:flag obj $idx e))
+  (doargs (e) (:flag obj $idx e))
   obj))
 
 (define (s idx) (if (self .FLAGS idx) "1" "0"))
@@ -43,10 +42,8 @@
 
 (define (set*)
   (if (list? (args 0))
-    (dolist (e (args 0))
-      (flag $idx e))
-    (doargs (e)
-      (flag $idx e))))
+    (dolist (e (args 0)) (flag $idx e))
+    (doargs (e) (flag $idx e))))
 
 (define (to-string) (let (
   str (join (map (fn (a) (if a "1" "0")) (self .FLAGS)))

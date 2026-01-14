@@ -15,10 +15,7 @@
 ;;
 (context 'Cycle)
 
-(constant
-  '.INDEX 1
-  '.LIST 2
-  '.LENGTH 3)
+(constant '.INDEX 1 '.LIST 2 '.LENGTH 3)
 
 (define (Cycle:Cycle lst) (list (context) 0 lst (length lst)))
 
@@ -40,5 +37,4 @@
 (define (set-to item) (let (
   ndx (find item (self .LIST))
   )
-  (when ndx
-    (setf (self .INDEX) ndx))))
+  (when ndx (setf (self .INDEX) ndx))))

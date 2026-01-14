@@ -20,6 +20,5 @@
     )
     (doargs (e var)
       (setq var (match (eval (pop e)) that))
-        (unless (nil? var)
-          (setq rslt (eval (cons 'begin e)))))
+      (unless (nil? var) (setq rslt (eval (cons 'begin e)))))
     rslt)))
