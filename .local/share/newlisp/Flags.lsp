@@ -51,7 +51,7 @@
   (if (empty? (args))
     str
     (if (list? (args 0))
-      (join (map str (args 0)))
+      (select str (args 0))
       (splat slice (cons str (args)))))))
 
 (define (to-nums) (let (
@@ -60,7 +60,7 @@
   (if (empty? (args))
     nums
     (if (list? (args 0))
-      (map 'nums (args 0))
+      (select nums (args 0))
       (splat slice (cons nums (args)))))))
 
 (define (to-bools) (let (
@@ -69,7 +69,7 @@
   (if (empty? (args))
     bools
     (if (list? (args 0))
-      (map 'bools (args 0))
+      (select bools (args 0))
       (splat slice (cons bools (args)))))))
 
 (define (to-int) (let (
