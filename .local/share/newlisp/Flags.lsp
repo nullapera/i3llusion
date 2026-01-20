@@ -38,10 +38,7 @@
 (define (not! idx)
   (setf (self .FLAGS idx) (not (self .FLAGS idx))))
 
-(define (set*)
-  (if (list? (args 0))
-    (dolist (e (args 0)) (flag $idx e))
-    (doargs (e) (flag $idx e))))
+(define (set-from lst) (dolist (e lst) (flag $idx e)))
 
 (define (to-bools a0 a1)
   (if
@@ -56,5 +53,4 @@
 (define (to-string a0 a1)
   (join (map (fn (a) (if a "1" "0")) (to-bools a0 a1))))
 
-(define (to-int a0 a1)
-  (int (to-string a0 a1) 0 2))
+(define (to-int a0 a1) (int (to-string a0 a1) 0 2))

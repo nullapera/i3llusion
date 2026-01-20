@@ -14,7 +14,7 @@
 
 (constant '.CMD 1 '.ARGS 2)
 
-(define (Cmd:Cmd apath) (list (context) apath (args)))
+(define (Cmd:Cmd cmd) (list (context) cmd (args)))
 
 (define (dry-run)
   (join (cons (self .CMD)
