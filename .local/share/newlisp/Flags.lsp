@@ -18,8 +18,6 @@
 ;;  (:to-int flx 0 4) => 4
 ;;  (:to-int flx '(1 5 7)) => 7
 ;;
-(require "splat")
-
 (context 'Flags)
 
 (constant '.FLAGS 1)
@@ -45,34 +43,18 @@
     (dolist (e (args 0)) (flag $idx e))
     (doargs (e) (flag $idx e))))
 
-(define (to-string) (let (
-  str (join (map (fn (a) (if a "1" "0")) (self .FLAGS)))
-  )
-  (if (empty? (args))
-    str
-    (if (list? (args 0))
-      (select str (args 0))
-      (splat slice (cons str (args)))))))
+(define (to-bools a0 a1)
+  (if
+    (nil? a0) (self .FLAGS)
+    (list? a0) (select (self .FLAGS) a0)
+    (nil? a1) (a0 (self .FLAGS))
+    (a0 a1 (self .FLAGS))))
 
-(define (to-nums) (let (
-  nums (map (fn (a) (if a 1 0)) (self .FLAGS))
-  )
-  (if (empty? (args))
-    nums
-    (if (list? (args 0))
-      (select nums (args 0))
-      (splat slice (cons nums (args)))))))
+(define (to-nums a0 a1)
+  (map (fn (a) (if a 1 0)) (to-bools a0 a1)))
 
-(define (to-bools) (let (
-  bools (self .FLAGS)
-  )
-  (if (empty? (args))
-    bools
-    (if (list? (args 0))
-      (select bools (args 0))
-      (splat slice (cons bools (args)))))))
+(define (to-string a0 a1)
+  (join (map (fn (a) (if a "1" "0")) (to-bools a0 a1))))
 
-(define (to-int) (let (
-  str (splat to-string (args))
-  )
-  (int str 0 2)))
+(define (to-int a0 a1)
+  (int (to-string a0 a1) 0 2))
