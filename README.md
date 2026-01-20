@@ -1,7 +1,7 @@
 # i3llusion
 
 ## about
-* a small system via newlisp([*download*](https://github.com/marchildmann/newlisp)) script for [i3wm](https://i3wm.org/) and [polybar](https://polybar.github.io/).
+* a small system via `newLISP`([download](https://github.com/marchildmann/newlisp)) script for [`i3wm`](https://i3wm.org/) and [`polybar`](https://polybar.github.io/).
 * mostly for tiling/floating windows.
 * statuses show on polybar as letters.
 * see i3llusion.lsp, i3llusion-i3wm.conf for depidencies.
