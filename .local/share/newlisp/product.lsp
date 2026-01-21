@@ -8,7 +8,7 @@
 (context 'product)
 
 (define (product:product) (let (
-  lst (replace '() (map (fn (a) (if (list? a) a (list a))) (args)))
+  lst (replace '() (args))
   )
   (when lst (let (
     prod (lambda (lstA lstB , (rslt '()))

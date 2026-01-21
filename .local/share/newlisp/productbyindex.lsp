@@ -8,7 +8,7 @@
 (context 'productbyindex)
 
 (define (productbyindex:productbyindex ndx) (letn (
-  lst (replace '() (map (fn (a) (if (list? a) a (list a))) (args)))
+  lst (replace '() (args))
   len (map length lst)
   )
   (if (or (< ndx 0) (<= (apply * len) ndx))
