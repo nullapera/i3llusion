@@ -18,3 +18,8 @@
 * button-2: set to default or extra functionality
 * button-3: toggle folding/unfolding
 * button-4,5/wheel: adjust value
+
+## other newLISP related stuff
+* syntax highlighting files for text editors
+* .init.lsp for loading modules from various paths
+* probably (un)nessesary modules
