@@ -17,16 +17,14 @@
 ;;  (:step sl +2) => 25
 ;;  (:step sl -4) => 5
 ;;
-(require "mutuple")
-(mutuple {Slider} "value defvalue minvalue maxvalue stepvalue")
-
-
-(context Slider)
+(context 'Slider)
 
 (constant '.VALUE 1 '.DEFAULT 2 '.MIN 3 '.MAX 4 '.STEP 5)
 
 (define (Slider:Slider (defaultval 0) (minval 0) (maxval 100) (stepval 1))
   (list (context) defaultval defaultval minval maxval (abs stepval)))
+
+(define (value) (self .VALUE))
 
 (define (value! newval)
   (setf (self .VALUE)
