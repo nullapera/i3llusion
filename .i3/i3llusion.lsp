@@ -50,13 +50,6 @@
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
 
-(constant
-  '.COUNTER 0 '.FUNC 1 'LIMIT 60)
-(setq
-  TX:kelvin '(0 (when (and (:b N:flx 1) (not (:b N:flx 0))) (make-kelvin)))
-  TX:postouts '(0 (when (and (:b A:flx 1) (:b A:flx 4)) (post-outs)))
-  TX:snooze  '(60 (begin (-- Z:timecounter) (checktime))))
-
 (setq ; M: Mode
   M:flx (Flags 4 0 1 1)
   M:memo '()
@@ -77,6 +70,9 @@
   N:off (Cmd {redshift} "-x -m randr")
   N:manual (Cmd {redshift} "-r -P -m randr -O")
   N:slider (Slider 6400 2400 6400 50)
+  N:tickcounter 0
+  N:tickfunc (lambda ()
+    (when (and (:b N:flx 1) (not (:b N:flx 0))) (make-kelvin)))
   N:texts '(
     "n" "Nightlight: Off"
     "N" "Nightlight:"
@@ -94,19 +90,27 @@
   Z:timecounter Z:timelimit
   Z:on (Cmd {xset} "s 360 360 dpms 480 600 720")
   Z:off (Cmd {xset} "s off -dpms")
+  Z:tickcounter 60
+  Z:tickfunc (lambda () (-- Z:timecounter) (checktime))
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
 (setq ; A: Auto{save,memo}
   A:flx (Flags 6 0 1 0 0 1 1)
+  A:tickcounter 0
+  A:tickfunc (lambda () (when (and (:b A:flx 1) (:b A:flx 4)) (post-outs)))
   A:texts '("a" "a" "a" "a" "Asm" "AsM" "ASm" "ASM"))
 
-(let (pth (append i3path myname "-msg.lsp"))
+(constant
+  'BESIX 6 'TICKLIMIT (/ 3600 10 BESIX)
+  'LETTERS (list M P N C Z A) 'TIX (list N Z A))
+
+(let (path (append i3path myname "-msg.lsp"))
   (setq letters_fmt (append
-    "%%{A1:" pth " %s_1:}"
-    "%%{A2:" pth " %s_2:}"
-    "%%{A3:" pth " %s_3:}"
-    "%%{A4:" pth " %s_4:}"
-    "%%{A5:" pth " %s_5:}"
+    "%%{A1:" path " %s_1:}"
+    "%%{A2:" path " %s_2:}"
+    "%%{A3:" path " %s_3:}"
+    "%%{A4:" path " %s_4:}"
+    "%%{A5:" path " %s_5:}"
     "%%{F%s} %s "
     "%%{A}%%{A}%%{A}%%{A}%%{A}")))
 
@@ -168,13 +172,13 @@
 
 (define (systemctl cmd)
   (timer (fn ()
-    (setq Z:timecounter Z:timelimit)
-    (setf (TX:snooze .COUNTER) LIMIT
-          (TX:kelvin .COUNTER) 0)
-    (remit)) 6)
+    (setq Z:timecounter Z:timelimit
+          Z:tickcounter TICKLIMIT
+          N:tickcounter 0)
+    (remit)) BESIX)
   (when (and (:b A:flx 1) (:b A:flx 4))
     (post-outs)
-    (setf (TX:postouts .COUNTER) LIMIT))
+    (setq A:tickcounter TICKLIMIT))
   (:run Z:systemctl cmd))
 
 (define (checktime)
@@ -185,10 +189,19 @@
     (:run notify {critical}
       (append "'snooZe: Close to " (:at Z:cycle) "!'"))))
 
+(define (remit) (local (flag)
+  (timer 'remit BESIX)
+  (dolist (e TIX)
+    (when (<= (-- e:tickcounter) 0)
+      (setq e:tickcounter TICKLIMIT
+            flag true)
+      (e:tickfunc)))
+  (when flag (letters2polybar))))
+
 (define (post-outs) (let (
   flag true
   lst (append
-    (map (fn (a) (:to-nums (context a 'flx))) '(M P N C Z A))
+    (map (fn (a) (:to-nums a:flx)) LETTERS)
     (list (:index P:cycle) (:value N:slider) Z:timelimit (:index Z:cycle)))
   )
   (unless (write-file i3memo (string M:memo))
@@ -210,8 +223,8 @@
   (when (file? i3cond)
     (if (setq data (read-file i3cond))
       (let (lst (parse data "\n"))
-        (dolist (e '(M P N C Z A))
-          (:set-from (context e 'flx) (read-expr (pop lst))))
+        (dolist (e LETTERS)
+          (:set-from e:flx (read-expr (pop lst))))
         (:set-to M:cycle (setf (nth 3 (:to-nums M:flx)) 1))
         (:at! P:cycle (int (pop lst)))
         (if (:b N:flx 0)
@@ -224,15 +237,6 @@
         (:at! Z:cycle (int (pop lst))))
       (:run notify {critical}
         (append "'post-ins: Can not read from " i3cond "!'"))))))
-
-(define (remit) (local (flag)
-  (timer 'remit 6)
-  (dotree (e TX)
-    (when (<= (-- ((eval e) .COUNTER)) 0)
-      (setf ((eval e) .COUNTER) LIMIT)
-      (eval ((eval e) .FUNC))
-      (setq flag true)))
-  (when flag (letters2polybar))))
 
 (define (propeller) (let (
   x nil
@@ -313,11 +317,11 @@
         (:flag N:flx 0 nil)
         (if (:not! N:flx 1)
           (begin
-            (setf (TX:kelvin .COUNTER) LIMIT)
+            (setq N:tickcounter TICKLIMIT)
             (make-kelvin))
           (:run N:off)))
       ('(? "2") (when (:b N:flx 0)
-        (setf (TX:kelvin .COUNTER) LIMIT)
+        (setq N:tickcounter TICKLIMIT)
         (make-kelvin)
         (:flag N:flx 0 nil)))
       ('(? "3") (:not! N:flx 3))
@@ -333,8 +337,8 @@
     ("Z" (case-match (r tail)
       ('(? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
       ('(? "2")
-        (setq Z:timecounter Z:timelimit)
-        (setf (TX:snooze .COUNTER) LIMIT)
+        (setq Z:timecounter Z:timelimit
+              Z:tickcounter TICKLIMIT)
         (checktime))
       ('(? "3") (:not! Z:flx 3))
       ('("b" "4") (++ Z:timelimit))
@@ -343,16 +347,16 @@
       ('("c" "5") (:step Z:cycle -1))
       ('("d" "4")
         (++ Z:timecounter)
-        (setf (TX:snooze .COUNTER) LIMIT))
+        (setq Z:tickcounter TICKLIMIT))
       ('("d" "5")
         (-- Z:timecounter)
-        (setf (TX:snooze .COUNTER) LIMIT)
+        (setq Z:tickcounter TICKLIMIT)
         (checktime))))
     ("A" (case-match (r tail)
       ('(? "1") (:not! A:flx 1))
       ('(? "2") (when (post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
-        (setf (TX:postouts .COUNTER) LIMIT)))
+        (setq A:tickcounter TICKLIMIT)))
       ('(? "3") (:not! A:flx 3))
       ('("b" ?) (:not! A:flx 4))
       ('("c" ?) (:not! A:flx 5))))
@@ -360,7 +364,7 @@
       ("8" (setq flag true))
       ("postouts" (when (post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
-        (setf (TX:postouts .COUNTER) LIMIT)))
+        (setq A:tickcounter TICKLIMIT)))
       ("propeller" (propeller))
       ("polytoggle" (on-workspace-focus))
       ("automemo" (when (and (:b A:flx 1) (:b A:flx 5)) (toggle-memo)))
