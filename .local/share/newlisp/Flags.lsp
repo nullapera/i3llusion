@@ -36,7 +36,7 @@
   (setf (self .FLAGS idx) (and (not (null? value)) (!= value "0"))))
 
 (define (not! idx)
-  (setf (self .FLAGS idx) (not (self .FLAGS idx))))
+  (setf (self .FLAGS idx) (not $it)))
 
 (define (set-from lst) (dolist (e lst) (flag $idx e)))
 

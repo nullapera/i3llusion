@@ -105,7 +105,7 @@
   'LETTERS (list M P N C Z A) 'TIX (list N Z A))
 
 (let (path (append i3path myname "-msg.lsp"))
-  (setq letters_fmt (append
+  (setq lettersfmt (append
     "%%{A1:" path " %s_1:}"
     "%%{A2:" path " %s_2:}"
     "%%{A3:" path " %s_3:}"
@@ -118,12 +118,12 @@
 (define PRoP:PRoP)
 (define ReCT:ReCT)
 
-(define polybar_pid
-  (spawn 'polybar_spawn
+(define polybarpid
+  (spawn 'polybarspawn
     (let (
       conn nil
       data nil
-      parent_pid (sys-info 6)
+      parentpid (sys-info 6)
       socket (net-listen i3ipcpath)
       )
       (while true
@@ -131,13 +131,13 @@
         (until (net-select conn "r" 35000))
         (net-receive conn data 256)
         (net-close conn)
-        (send parent_pid data)))
+        (send parentpid data)))
     true))
 
 (define (letters2polybar) (let (
   letters '()
   envelope (lambda (letter text) (push
-    (format letters_fmt letter letter letter letter letter (:at colors) text)
+    (format lettersfmt letter letter letter letter letter (:at colors) text)
     letters -1))
   )
   (:step colors -1)
@@ -214,15 +214,15 @@
       (append "'post-outs: Can not write to " i3cond "!'")))
   flag))
 
-(define (post-ins) (local (data)
+(define (post-ins)
   (when (file? i3memo)
-    (if (setq data (read-file i3memo))
-      (setq M:memo (read-expr data))
+    (if (read-file i3memo)
+      (set 'M:memo (read-expr $it))
       (:run notify {critical}
         (append "'post-ins: Can not read from " i3memo "!'"))))
   (when (file? i3cond)
-    (if (setq data (read-file i3cond))
-      (let (lst (parse data "\n"))
+    (if (read-file i3cond)
+      (let (lst (parse $it "\n"))
         (dolist (e LETTERS)
           (:set-from e:flx (read-expr (pop lst))))
         (:set-to M:cycle (setf (nth 3 (:to-nums M:flx)) 1))
@@ -236,7 +236,7 @@
         (when (:b Z:flx 1) (:run Z:on))
         (:at! Z:cycle (int (pop lst))))
       (:run notify {critical}
-        (append "'post-ins: Can not read from " i3cond "!'"))))))
+        (append "'post-ins: Can not read from " i3cond "!'")))))
 
 (define (propeller) (let (
   x nil
@@ -458,19 +458,19 @@
     (until (net-select (:socket ipc4sub) "r" 25000)
       (dolist (child_pid (receive))
         (receive child_pid data)
-        (when (= child_pid polybar_pid)
+        (when (= child_pid polybarpid)
           (setq flag (lettershop data))
           (letters2polybar))))
     (setq data (:receive ipc4sub)
           json (json-parse data))
-    (if (setq data (lookup "container" json))
+    (if (lookup "container" json)
       (case (lookup "change" json)
-        ("focus" (BoX data) (on-fullscreen))
-        ("new" (BoX data) (on-new))
-        ("floating" (BoX data) (on-floating))
-        ("move" (BoX data) (on-move))
-        ("fullscreen_mode" (BoX data) (on-fullscreen)))
-      (when (setq data  (lookup "current" json))
+        ("focus" (BoX $it) (on-fullscreen))
+        ("new" (BoX $it) (on-new))
+        ("floating" (BoX $it) (on-floating))
+        ("move" (BoX $it) (on-move))
+        ("fullscreen_mode" (BoX $it) (on-fullscreen)))
+      (when (lookup "current" json)
         (case (lookup "change" json)
           ("focus" (on-workspace-focus))))))
   (:close ipc)
