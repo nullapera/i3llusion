@@ -13,25 +13,22 @@
 
 (context 'i3llusion)
 
-(require "dirname")
-
 (setq
-  myname (string (context))
   i3sock (env "I3SOCK")
-  i3ipcpath (append (dirname i3sock) "/" myname ".ipc"))
+  polybarsock (replace {/[^/]+\z} (copy i3sock) "/i3llusion.ipc" 0))
 
 (let (
   selfpid (sys-info 7)
   pids (find-all
-    (append myname ".lsp")
+    "i3llusion.lsp"
     (exec {ps -C newlisp -o pid,args})
     (int (first (parse $it)))
     find)
   )
   (map destroy (replace selfpid pids))
-  (when (file? i3ipcpath)
-    (unless (delete-file i3ipcpath)
-      (throw-error (append "Can not be deleted! : '" i3ipcpath "'")))))
+  (when (file? polybarsock)
+    (unless (delete-file polybarsock)
+      (throw-error (append "Can not be deleted! : '" polybarsock "'")))))
 
 (require
   "Flags" "Cmd" "Cycle" "Slider" "permutations" "case-match" "i3llusion/i3ipc")
@@ -43,10 +40,10 @@
   colors (Cycle (map
     (fn (a) (join (cons "#" a)))
     (permutations 3 '("8" "a" "c" "f"))))
-  i3path (append (real-path) "/")
-  i3memo (append i3path myname "-memo.dat")
-  i3cond (append i3path myname "-cond.dat")
-  notify (Cmd {notify-send} "-u" myname)
+  basepath (append (real-path) "/i3llusion")
+  memodat (append basepath "-memo.dat")
+  conddat (append basepath "-cond.dat")
+  notify (Cmd {notify-send} "-u" "* i3llusion *")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
 
@@ -80,7 +77,7 @@
     "!N" "!Nightlight:"))
 (setq ; C: Compositor
   C:flx (Flags 4 0 1)
-  C:on (Cmd {picom} "-b --config" (append i3path myname "-picom.conf"))
+  C:on (Cmd {picom} "-b --config" (append basepath "-picom.conf"))
   C:off (Cmd {pkill} "picom")
   C:texts '("c" "Compositor: Off" "C" "Compositor: On"))
 (setq ; Z: snooZe
@@ -104,13 +101,13 @@
   'BESIX 6 'TICKLIMIT (/ 3600 10 BESIX)
   'LETTERS (list M P N C Z A) 'TIX (list N Z A))
 
-(let (path (append i3path myname "-msg.lsp"))
+(let (p (append basepath "-msg.lsp"))
   (setq lettersfmt (append
-    "%%{A1:" path " %s_1:}"
-    "%%{A2:" path " %s_2:}"
-    "%%{A3:" path " %s_3:}"
-    "%%{A4:" path " %s_4:}"
-    "%%{A5:" path " %s_5:}"
+    "%%{A1:" p " %s_1:}"
+    "%%{A2:" p " %s_2:}"
+    "%%{A3:" p " %s_3:}"
+    "%%{A4:" p " %s_4:}"
+    "%%{A5:" p " %s_5:}"
     "%%{F%s} %s "
     "%%{A}%%{A}%%{A}%%{A}%%{A}")))
 
@@ -124,7 +121,7 @@
       conn nil
       data nil
       parentpid (sys-info 6)
-      socket (net-listen i3ipcpath)
+      socket (net-listen polybarsock)
       )
       (while true
         (setq conn (net-accept socket))
@@ -204,24 +201,24 @@
     (map (fn (a) (:to-nums a:flx)) LETTERS)
     (list (:index P:cycle) (:value N:slider) Z:timelimit (:index Z:cycle)))
   )
-  (unless (write-file i3memo (string M:memo))
+  (unless (write-file memodat (string M:memo))
     (setq flag nil)
     (:run notify {critical}
-      (append "'post-outs: Can not write to " i3memo "!'")))
-  (unless (write-file i3cond (join (map string lst) "\n"))
+      (append "'post-outs: Can not write to " memodat "!'")))
+  (unless (write-file conddat (join (map string lst) "\n"))
     (setq flag nil)
     (:run notify {critical}
-      (append "'post-outs: Can not write to " i3cond "!'")))
+      (append "'post-outs: Can not write to " conddat "!'")))
   flag))
 
 (define (post-ins)
-  (when (file? i3memo)
-    (if (read-file i3memo)
+  (when (file? memodat)
+    (if (read-file memodat)
       (set 'M:memo (read-expr $it))
       (:run notify {critical}
-        (append "'post-ins: Can not read from " i3memo "!'"))))
-  (when (file? i3cond)
-    (if (read-file i3cond)
+        (append "'post-ins: Can not read from " memodat "!'"))))
+  (when (file? conddat)
+    (if (read-file conddat)
       (let (lst (parse $it "\n"))
         (dolist (e LETTERS)
           (:set-from e:flx (read-expr (pop lst))))
@@ -236,7 +233,7 @@
         (when (:b Z:flx 1) (:run Z:on))
         (:at! Z:cycle (int (pop lst))))
       (:run notify {critical}
-        (append "'post-ins: Can not read from " i3cond "!'")))))
+        (append "'post-ins: Can not read from " conddat "!'")))))
 
 (define (propeller) (let (
   x nil
@@ -447,7 +444,7 @@
 
 ; main loop
 (local (flag data json)
-  (map delete '(dirname include isinPATH permutations require))
+  (map delete '(include isinPATH permutations require))
   (:run C:off)
   (:run Z:off)
   (:subscribe ipc4sub {[ "window", "workspace" ]})

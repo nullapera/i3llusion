@@ -13,11 +13,10 @@
   'SUBSCRIBE 2
   'GET_TREE 4)
 
-(define (i3ipc:i3ipc apath)
-  (list
-    (context)
-    (unless (net-connect apath)
-      (throw-error (string (context) " => No connection to: '" apath "'")))))
+(define (i3ipc:i3ipc path)
+  (if (net-connect path)
+    (list (context) $it)
+    (throw-error (string (context) " => No connection to: '" path "'"))))
 
 (define (socket) (self .SOCKET))
 
