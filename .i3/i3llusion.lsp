@@ -43,7 +43,7 @@
   basepath (append (real-path) "/i3llusion")
   memodat (append basepath "-memo.dat")
   conddat (append basepath "-cond.dat")
-  notify (Cmd {notify-send} "-u" "* i3llusion *")
+  notify (Cmd {notify-send} "-u" "'** i3llusion **'")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
 
