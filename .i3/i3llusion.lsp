@@ -17,7 +17,7 @@
   i3sock (env "I3SOCK")
   polybarsock (replace {/[^/]+\z} (copy i3sock) "/i3llusion.ipc" 0))
 
-(let (
+(let(
   selfpid (sys-info 7)
   pids (find-all
     "i3llusion.lsp"
@@ -38,7 +38,7 @@
   ipc (i3ipc i3sock)
   ipc4sub (i3ipc i3sock)
   colors (Cycle (map
-    (fn (a) (join (cons "#" a)))
+    (fn(a) (join (cons "#" a)))
     (permutations 3 '("8" "a" "c" "f"))))
   basepath (append (real-path) "/i3llusion")
   memodat (append basepath "-memo.dat")
@@ -46,6 +46,9 @@
   notify (Cmd {notify-send} "-u" "'** i3llusion **'")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
+
+(constant
+  'BESIX 6 'TICKLIMIT (/ 3600 10 BESIX))
 
 (setq ; M: Mode
   M:flx (Flags 4 0 1 1)
@@ -68,7 +71,7 @@
   N:manual (Cmd {redshift} "-r -P -m randr -O")
   N:slider (Slider 6400 2400 6400 50)
   N:tickcounter 0
-  N:tickfunc (lambda ()
+  N:tickfunc (lambda()
     (when (and (:b N:flx 1) (not (:b N:flx 0))) (make-kelvin)))
   N:texts '(
     "n" "Nightlight: Off"
@@ -86,22 +89,21 @@
   Z:timelimit 80
   Z:timecounter Z:timelimit
   Z:on (Cmd {xset} "s 360 360 dpms 480 600 720")
-  Z:off (Cmd {xset} "s off -dpms")
-  Z:tickcounter 60
-  Z:tickfunc (lambda () (-- Z:timecounter) (checktime))
+Z:off (Cmd {xset} "s off -dpms")
+  Z:tickcounter TICKLIMIT
+  Z:tickfunc (lambda() (-- Z:timecounter) (checktime))
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
 (setq ; A: Auto{save,memo}
   A:flx (Flags 6 0 1 0 0 1 1)
   A:tickcounter 0
-  A:tickfunc (lambda () (when (and (:b A:flx 1) (:b A:flx 4)) (post-outs)))
+  A:tickfunc (lambda() (when (and (:b A:flx 1) (:b A:flx 4)) (post-outs)))
   A:texts '("a" "a" "a" "a" "Asm" "AsM" "ASm" "ASM"))
 
 (constant
-  'BESIX 6 'TICKLIMIT (/ 3600 10 BESIX)
   'LETTERS (list M P N C Z A) 'TIX (list N Z A))
 
-(let (p (append basepath "-msg.lsp"))
+(let(p (append basepath "-msg.lsp"))
   (setq lettersfmt (append
     "%%{A1:" p " %s_1:}"
     "%%{A2:" p " %s_2:}"
@@ -117,7 +119,7 @@
 
 (define polybarpid
   (spawn 'polybarspawn
-    (let (
+    (let(
       conn nil
       data nil
       parentpid (sys-info 6)
@@ -131,9 +133,9 @@
         (send parentpid data)))
     true))
 
-(define (letters2polybar) (let (
+(define(letters2polybar) (let(
   letters '()
-  envelope (lambda (letter text) (push
+  envelope (lambda(letter text) (push
     (format lettersfmt letter letter letter letter letter (:at colors) text)
     letters -1))
   )
@@ -164,11 +166,11 @@
     (envelope "A_a" (A:texts (:to-int A:flx '(1 4 5)))))
   (write-line 1 (join letters))))
 
-(define (make-kelvin)
+(define(make-kelvin)
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
 
-(define (systemctl cmd)
-  (timer (fn ()
+(define(systemctl cmd)
+  (timer (fn()
     (setq Z:timecounter Z:timelimit
           Z:tickcounter TICKLIMIT
           N:tickcounter 0)
@@ -178,7 +180,7 @@
     (setq A:tickcounter TICKLIMIT))
   (:run Z:systemctl cmd))
 
-(define (checktime)
+(define(checktime)
   (if
     (<= Z:timecounter 0)
     (systemctl (:at Z:cycle))
@@ -186,19 +188,19 @@
     (:run notify {critical}
       (append "'snooZe: Close to " (:at Z:cycle) "!'"))))
 
-(define (remit) (local (flag)
+(define(remit) (local(flag)
   (timer 'remit BESIX)
-  (dolist (e TIX)
+  (dolist(e TIX)
     (when (<= (-- e:tickcounter) 0)
       (setq e:tickcounter TICKLIMIT
             flag true)
       (e:tickfunc)))
   (when flag (letters2polybar))))
 
-(define (post-outs) (let (
+(define(post-outs) (let(
   flag true
   lst (append
-    (map (fn (a) (:to-nums a:flx)) LETTERS)
+    (map (fn(a) (:to-nums a:flx)) LETTERS)
     (list (:index P:cycle) (:value N:slider) Z:timelimit (:index Z:cycle)))
   )
   (unless (write-file memodat (string M:memo))
@@ -211,7 +213,7 @@
       (append "'post-outs: Can not write to " conddat "!'")))
   flag))
 
-(define (post-ins)
+(define(post-ins)
   (when (file? memodat)
     (if (read-file memodat)
       (set 'M:memo (read-expr $it))
@@ -219,8 +221,8 @@
         (append "'post-ins: Can not read from " memodat "!'"))))
   (when (file? conddat)
     (if (read-file conddat)
-      (let (lst (parse $it "\n"))
-        (dolist (e LETTERS)
+      (let(lst (parse $it "\n"))
+        (dolist(e LETTERS)
           (:set-from e:flx (read-expr (pop lst))))
         (:set-to M:cycle (setf (nth 3 (:to-nums M:flx)) 1))
         (:at! P:cycle (int (pop lst)))
@@ -235,21 +237,21 @@
       (:run notify {critical}
         (append "'post-ins: Can not read from " conddat "!'")))))
 
-(define (propeller) (let (
+(define(propeller) (let(
   x nil
   lst '()
   json (json-parse (:gettree ipc))
   )
-  (dolist (e (ref-all '("scratchpad_state" ?) json match))
+  (dolist(e (ref-all '("scratchpad_state" ?) json match))
     (unless (= (json (append e '(1))) "none")
       (setq x (first (lookup "nodes" (json (0 -1 e)))))
       (push (lookup "window" x) lst -1)))
-  (when lst (letn (
+  (when lst (letn(
     rf (ref '("focused" true) json match)
     fcsd (when rf (json (0 -1 rf)))
     )
     (if (and fcsd (= (lookup "type" fcsd) "con"))
-      (let (
+      (let(
         fwid (lookup "window" fcsd)
         ffon (ends-with (lookup "floating" fcsd) "on")
         )
@@ -270,7 +272,7 @@
           (when ffon (:run xprop (string x)))))
       (:command ipc "scratchpad show"))))))
 
-(define (toggle-memo) (letn (
+(define(toggle-memo) (letn(
   json (json-parse (:gettree ipc))
   rf (ref '("focused" true) json match)
   fcsd (when rf (json (0 -1 rf)))
@@ -289,7 +291,7 @@
         (= '(nil true "user_off") r) (pop M:memo idx)
         (= '(nil nil "user_on") r) (push rec M:memo))))))
 
-(define (lettershop stamp) (letn (
+(define(lettershop stamp) (letn(
   flag nil
   tail (parse stamp "_")
   head (pop tail)
@@ -305,11 +307,11 @@
       (true
         (:not! M:flx (int (first tail)))
         (:set-to M:cycle (:to-nums M:flx)))))
-    ("P" (case-match (r tail)
+    ("P" (case-match(r tail)
       ('(? "3") (:not! P:flx 3))
       ('("b" "4") (:step P:cycle +1))
       ('("b" "5") (:step P:cycle -1))))
-    ("N" (case-match (r tail)
+    ("N" (case-match(r tail)
       ('(? "1")
         (:flag N:flx 0 nil)
         (if (:not! N:flx 1)
@@ -331,7 +333,7 @@
     ("C" (case (first tail)
       ("1" (:run (if (:not! C:flx 1) C:on C:off)))
       ("3" (:not! C:flx 3))))
-    ("Z" (case-match (r tail)
+    ("Z" (case-match(r tail)
       ('(? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
       ('(? "2")
         (setq Z:timecounter Z:timelimit
@@ -349,7 +351,7 @@
         (-- Z:timecounter)
         (setq Z:tickcounter TICKLIMIT)
         (checktime))))
-    ("A" (case-match (r tail)
+    ("A" (case-match(r tail)
       ('(? "1") (:not! A:flx 1))
       ('(? "2") (when (post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
@@ -369,10 +371,10 @@
       (true (systemctl (first tail))))))
   flag))
 
-(define (go2position (lt1 0))
+(define(go2position (lt1 0))
   (append "move position "
     (if (= (:at P:cycle) "upside")
-      (let (yo (mul P:height lt1))
+      (let(yo (mul P:height lt1))
         (ReCT BoX:_rect)
         (format {%d px %d px} ReCT:_x
           (if
@@ -381,16 +383,16 @@
             (- (+ P:y P:height) ReCT:_height))))
       (:at P:cycle))))
 
-(define (check-wcwi) (let (
+(define(check-wcwi) (let(
   flag nil
   json (json-parse (:gettree ipc))
   )
-  (dolist (e (ref-all '("window_properties" ?) json match true) flag)
+  (dolist(e (ref-all '("window_properties" ?) json match true) flag)
     (setq flag (and (= PRoP:_class (lookup "class" (last e)))
                     (!= PRoP:_instance (lookup "instance" (last e))))))))
 
-(define (on-fullscreen)
-  (when (:b Z:flx 1) (let (
+(define(on-fullscreen)
+  (when (:b Z:flx 1) (let(
     r (cons BoX:_fullscreen_mode Z:fullscreen_mode)
     )
     (cond ((= '(1 0) r) (:run Z:off)
@@ -398,7 +400,7 @@
           ((= '(0 1) r) (:run Z:on)
                         (setq Z:fullscreen_mode 0))))))
 
-(define (on-floating)
+(define(on-floating)
   (if (or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
     (:command-wid ipc BoX:_window
       (if (ends-with BoX:_floating "on")
@@ -407,13 +409,11 @@
     (when (and (= (:at P:cycle) "upside") (ends-with BoX:_floating "on"))
       (:command-wid ipc BoX:_window (go2position 0.1)))))
 
-(define (on-new)
+(define(on-new)
   (when (or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
     (PRoP BoX:_window_properties)
-    (let (
-      idx (find (list PRoP:_class PRoP:_instance (:b M:flx 1)) M:memo)
-      )
-      (case-match (r (list (:b M:flx 1) (:b M:flx 2) (true? idx)))
+    (let(idx (find (list PRoP:_class PRoP:_instance (:b M:flx 1)) M:memo))
+      (case-match(r (list (:b M:flx 1) (:b M:flx 2) (true? idx)))
         ('(true true true)
           (:command-wid ipc BoX:_window "floating disable"))
         ('(nil true true)
@@ -424,8 +424,8 @@
           (:command-wid ipc BoX:_window
             (if (check-wcwi) "floating enable" "floating disable")))))))
 
-(define (on-move)
-  (unless (= BoX:_scratchpad_state "none") (let (
+(define(on-move)
+  (unless (= BoX:_scratchpad_state "none") (let(
     lst (first BoX:_nodes)
     )
     (BoX lst)
@@ -434,7 +434,7 @@
     (when (ends-with BoX:_floating "on")
       (:run xprop (string BoX:_window))))))
 
-(define (on-workspace-focus) (letn (
+(define(on-workspace-focus) (letn(
   json (json-parse (:getworkspaces ipc))
   fcsd (json (0 -1 (ref '("focused" true) json match)))
   )
@@ -443,7 +443,7 @@
         P:height ReCT:_height)))
 
 ; main loop
-(local (flag data json)
+(local(flag data json)
   (map delete '(include isinPATH permutations require))
   (:run C:off)
   (:run Z:off)
@@ -453,9 +453,9 @@
   (remit)
   (until flag
     (until (net-select (:socket ipc4sub) "r" 25000)
-      (dolist (child_pid (receive))
-        (receive child_pid data)
-        (when (= child_pid polybarpid)
+      (dolist(childpid (receive))
+        (receive childpid data)
+        (when (= childpid polybarpid)
           (setq flag (lettershop data))
           (letters2polybar))))
     (setq data (:receive ipc4sub)

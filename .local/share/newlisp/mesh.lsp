@@ -7,9 +7,9 @@
 ;;
 (context 'mesh)
 
-(define (mesh:mesh) (let (
+(define(mesh:mesh) (let(
   rslt (dup '() (apply max (map length (args))))
   )
-  (doargs (lst)
-    (dolist (e lst) (push e (rslt $idx) -1)))
+  (doargs(lst)
+    (dolist(e lst) (push e (rslt $idx) -1)))
   rslt))

@@ -7,13 +7,14 @@
 ;;
 (context 'product)
 
-(define (product:product) (let (
+(define(product:product) (letn(
   lst (replace '() (args))
+  rslt (map list (or (pop lst) '()))
+  tmp '()
   )
-  (when lst (let (
-    prod (lambda (lstA lstB , (rslt '()))
-      (dolist (a lstA)
-        (dolist (b lstB)
-          (push (push b (copy a) -1) rslt -1))))
-    )
-    (apply prod (push '(()) lst) 2)))))
+  (dolist(L lst)
+    (dolist(a rslt)
+      (dolist(b L) (push (push b (copy a) -1) tmp -1)))
+    (setq rslt tmp
+          tmp '()))
+  rslt))

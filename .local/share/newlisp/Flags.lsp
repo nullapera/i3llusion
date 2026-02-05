@@ -22,35 +22,34 @@
 
 (constant '.FLAGS 1)
 
-(define (Flags:Flags nsize) (let (
+(define(Flags:Flags nsize) (let(
   obj (list (context) (dup nil nsize))
   )
-  (doargs (e) (:flag obj $idx e))
+  (doargs(e) (:flag obj $idx e))
   obj))
 
-(define (s idx) (if (self .FLAGS idx) "1" "0"))
-(define (n idx) (if (self .FLAGS idx) 1 0))
-(define (b idx) (self .FLAGS idx))
+(define(s idx) (if (self .FLAGS idx) "1" "0"))
+(define(n idx) (if (self .FLAGS idx) 1 0))
+(define(b idx) (self .FLAGS idx))
 
-(define (flag idx value)
+(define(flag idx value)
   (setf (self .FLAGS idx) (and (not (null? value)) (!= value "0"))))
 
-(define (not! idx)
-  (setf (self .FLAGS idx) (not $it)))
+(define(not! idx) (setf (self .FLAGS idx) (not $it)))
 
-(define (set-from lst) (dolist (e lst) (flag $idx e)))
+(define(set-from lst) (dolist(e lst) (flag $idx e)))
 
-(define (to-bools a0 a1)
+(define(to-bools a0 a1)
   (if
     (nil? a0) (self .FLAGS)
     (list? a0) (select (self .FLAGS) a0)
     (nil? a1) (a0 (self .FLAGS))
     (a0 a1 (self .FLAGS))))
 
-(define (to-nums a0 a1)
-  (map (fn (a) (if a 1 0)) (to-bools a0 a1)))
+(define(to-nums a0 a1)
+  (map (fn(a) (if a 1 0)) (to-bools a0 a1)))
 
-(define (to-string a0 a1)
-  (join (map (fn (a) (if a "1" "0")) (to-bools a0 a1))))
+(define(to-string a0 a1)
+  (join (map (fn(a) (if a "1" "0")) (to-bools a0 a1))))
 
-(define (to-int a0 a1) (int (to-string a0 a1) 0 2))
+(define(to-int a0 a1) (int (to-string a0 a1) 0 2))

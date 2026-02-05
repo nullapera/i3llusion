@@ -13,38 +13,37 @@
   'SUBSCRIBE 2
   'GET_TREE 4)
 
-(define (i3ipc:i3ipc path)
+(define(i3ipc:i3ipc path)
   (if (net-connect path)
     (list (context) $it)
     (throw-error (string (context) " => No connection to: '" path "'"))))
 
-(define (socket) (self .SOCKET))
+(define(socket) (self .SOCKET))
 
-(define (i3ipc:close) (net-close (self .SOCKET)))
+(define(i3ipc:close) (net-close (self .SOCKET)))
 
-(define (i3ipc:send msgtype msg)
+(define(i3ipc:send msgtype msg)
   (net-send
     (self .SOCKET)
     (append (pack PACKFMT MAGIC (length msg) msgtype) msg)))
 
-(define (i3ipc:receive) (local (
-  rslt data
-  )
-  (net-receive (self .SOCKET) data PACKFMTLENGTH)
-  (setq rslt (unpack PACKFMT data))
-  (net-receive (self .SOCKET) data (rslt 1))
-  data))
+(define(i3ipc:receive)
+  (local(rslt data)
+    (net-receive (self .SOCKET) data PACKFMTLENGTH)
+    (setq rslt (unpack PACKFMT data))
+    (net-receive (self .SOCKET) data (rslt 1))
+    data))
 
-(define (chat msgtype msg)
+(define(chat msgtype msg)
   (send msgtype msg)
   (receive))
 
-(define (command cmd) (chat COMMAND cmd))
+(define(command cmd) (chat COMMAND cmd))
 
-(define (command-wid id cmd) (chat COMMAND (format CMDFMT id cmd)))
+(define(command-wid id cmd) (chat COMMAND (format CMDFMT id cmd)))
 
-(define (subscribe msg) (chat SUBSCRIBE msg))
+(define(subscribe msg) (chat SUBSCRIBE msg))
 
-(define (getworkspaces) (chat GET_WORKSPACES ""))
+(define(getworkspaces) (chat GET_WORKSPACES ""))
 
-(define (gettree) (chat GET_TREE ""))
+(define(gettree) (chat GET_TREE ""))

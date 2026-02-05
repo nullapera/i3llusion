@@ -4,7 +4,7 @@
 ;;
 (context 'include)
 
-(let (
+(let(
   homedir (env "HOME")
   nlspdir (env "NEWLISPDIR")
   )
@@ -16,12 +16,12 @@
     "/usr/share/newlisp"
     nlspdir)))))
 
-(define (include:include alsp (ctx 'MAIN)) (let (
+(define(include:include alsp (ctx 'MAIN)) (let(
   rslt nil
   path nil
   dirs (append (list (real-path)) DIRS)
   )
-  (dolist (e dirs rslt)
+  (dolist(e dirs rslt)
     (setq path (append e "/" alsp ".lsp"))
     (when (file? path true)
       (setq rslt (load path ctx))))
@@ -33,9 +33,9 @@
 
 (setq dbase '())
 
-(define (require:require)
+(define(require:require)
   (map
-    (fn (a)
+    (fn(a)
       (when (nil? (find a dbase))
         (push a dbase)
         (include a)))

@@ -6,7 +6,7 @@
 ;;
 (context 'extname)
 
-(define (extname:extname path)
+(define(extname:extname path)
   (if
     (find path '("." ".." "/" "")) ""
     (regex {(?<!/|\A)(\.[^.]*)\z} path) $1

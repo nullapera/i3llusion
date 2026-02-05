@@ -2,7 +2,7 @@
 ;;
 ;;  (require "block")
 ;;
-;;  (let (a 1 b 2)
+;;  (let(a 1 b 2)
 ;;    (block 'a
 ;;      (println "in-a")
 ;;      (block 'b
@@ -12,7 +12,7 @@
 ;;      (println "never here-a") )
 ;;    (list a b) ) => (4 2)
 ;;
-;;  (let (a 1 b 2)
+;;  (let(a 1 b 2)
 ;;    (block 'a
 ;;      (println "in-a")
 ;;      (block 'b
@@ -26,7 +26,7 @@
 
 (context 'block)
 
-(define-macro (block:block symbol) (letex (
+(define-macro(block:block symbol) (letex(
   x 'x
   symbol symbol
   body (cons 'begin (args))
@@ -41,4 +41,4 @@
 
 (context 'thru)
 
-(define (thru:thru symbol value) (throw (list (context) symbol value)))
+(define(thru:thru symbol value) (throw (list (context) symbol value)))

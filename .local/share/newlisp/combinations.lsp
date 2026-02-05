@@ -7,20 +7,20 @@
 ;;
 (context 'combinations)
 
-(define (combinations:combinations r lst) (let (
+(define(combinations:combinations r lst) (let(
   n (length lst)
   )
   (if
     (or (< r 1) (< n r)) '()
     (= r 1) (map list lst)
     (= n r) (list lst)
-    (let (
-      comb (lambda (r lst , x (rslt '()))
+    (let(
+      comb (lambda(r lst , x (rslt '()))
         (if (= r 1)
           (map list lst)
-          (dotimes (_ (++ (- (length lst) r)))
+          (dotimes(_ (++ (- (length lst) r)))
             (setq x (pop lst))
-            (dolist (e (comb (- r 1) lst))
+            (dolist(e (comb (- r 1) lst))
               (push (push x e) rslt -1)))))
       )
       (comb r lst)))))

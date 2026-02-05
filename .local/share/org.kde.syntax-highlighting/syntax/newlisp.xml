@@ -456,11 +456,11 @@
         <DetectChar attribute="String" context="string0" char="&quot;"/>
         <DetectChar attribute="String" context="string1" char="{"/>
         <StringDetect attribute="String" context="string2" String="[text]" insensitive="false"/>
-        <RegExpr attribute="Float" context="#stay" String="(?&lt;=[\s'(])[-+]?([0-9]+[eE][-+]?[0-9]+|([0-9]*\.[0-9]+|[0-9]+\.)([eE][-+]?[0-9]+)?)(?=([\s)]|$))"/>
-        <RegExpr attribute="BaseN" context="#stay" String="(?&lt;=[\s'(])0[0-7]+(?=([\s)]|$))"/>
-        <RegExpr attribute="BaseN" context="#stay" String="(?&lt;=[\s'(])0[xX][0-9a-fA-F]+(?=([\s)]|$))"/>
-        <RegExpr attribute="BaseN" context="#stay" String="(?&lt;=[\s'(])0[bB][01]+(?=([\s)]|$))"/>
-        <RegExpr attribute="Decimal" context="#stay" String="(?&lt;=[\s'(])[-+]?([1-9][0-9]*|0)[L]?(?=([\s)]|$))"/>
+        <RegExpr attribute="Float" context="#stay" String="(?&lt;=[\s'(])[-+]?([0-9]+[eE][-+]?[0-9]+|([0-9]*\.[0-9]+|[0-9]+\.)([eE][-+]?[0-9]+)?)(?=([\s()]|$))"/>
+        <RegExpr attribute="BaseN" context="#stay" String="(?&lt;=[\s'(])0[0-7]+(?=([\s()]|$))"/>
+        <RegExpr attribute="BaseN" context="#stay" String="(?&lt;=[\s'(])0[xX][0-9a-fA-F]+(?=([\s()]|$))"/>
+        <RegExpr attribute="BaseN" context="#stay" String="(?&lt;=[\s'(])0[bB][01]+(?=([\s()]|$))"/>
+        <RegExpr attribute="Decimal" context="#stay" String="(?&lt;=[\s'(])[-+]?([1-9][0-9]*|0)[L]?(?=([\s()]|$))"/>
       </context>
       <context name="string0" attribute="String" lineEndContext="#pop">
         <LineContinue attribute="String" context="#stay"/>

@@ -36,31 +36,31 @@
           &amp; | \^ | \~ |
           &lt;&lt; | &gt;&gt; |
           \| | \!)
-        (?=([\s)]|$))
+        (?=([\s()]|$))
       </match>
     </context>
 
     <context id="integer" style-ref="number">
       <match extended="true">
-        (?&lt;=[\s'(]) [-+]? ([1-9][0-9]* | 0) [L]? (?=([\s)]|$))
+        (?&lt;=[\s'(]) [-+]? ([1-9][0-9]* | 0) [L]? (?=([\s())]|$))
       </match>
     </context>
 
     <context id="octal" style-ref="number">
       <match extended="true">
-        (?&lt;=[\s'(]) 0 [0-7]+ (?=([\s)]|$))
+        (?&lt;=[\s'(]) 0 [0-7]+ (?=([\s())]|$))
       </match>
     </context>
 
     <context id="binary" style-ref="number">
       <match extended="true">
-        (?&lt;=[\s'(]) 0 [bB] [01]+ (?=([\s)]|$))
+        (?&lt;=[\s'(]) 0 [bB] [01]+ (?=([\s())]|$))
       </match>
     </context>
 
     <context id="hexa" style-ref="number">
       <match extended="true">
-        (?&lt;=[\s'(]) 0 [xX] [0-9a-fA-F]+ (?=([\s)]|$))
+        (?&lt;=[\s'(]) 0 [xX] [0-9a-fA-F]+ (?=([\s())]|$))
       </match>
     </context>
 
@@ -71,13 +71,13 @@
           ([0-9]+ [eE] [-+]? [0-9]+ |
             ([0-9]* \. [0-9]+ | [0-9]+ \.)
             ([eE] [-+]? [0-9]+)?)
-        (?=([\s)]|$))
+        (?=([\s()]|$))
       </match>
     </context>
 
     <context id="string" style-ref="string" class="string" class-disabled="no-spell-check">
       <start>(?&lt;=[\s'(])"</start>
-      <end>"(?=([\s)]|$))</end>
+      <end>"(?=([\s()]|$))</end>
       <include>
         <context ref="def:escape"/>
       </include>
@@ -85,7 +85,7 @@
 
     <context id="string1" style-ref="string" class="string" class-disabled="no-spell-check">
       <start>(?&lt;=[\s'(]){</start>
-      <end>}(?=([\s)]|$))</end>
+      <end>}(?=([\s()]|$))</end>
     </context>
 
     <context id="string2" style-ref="string" class="string" class-disabled="no-spell-check">
@@ -110,7 +110,7 @@
 
     <context id="data" style-ref="data">
       <prefix>(?&lt;=[\s'(])</prefix>
-      <suffix>(?=([\s)]|$))</suffix>
+      <suffix>(?=([\s()]|$))</suffix>
       <keyword>nil</keyword>
       <keyword>true</keyword>
       <keyword>ostype</keyword>
@@ -128,7 +128,7 @@
       <match extended="true">
         (?&lt;=[\s'(])
           (\$[0-9] | \$1[0-5])
-        (?=([\s)]|$))
+        (?=([\s()]|$))
       </match>
     </context>
 
@@ -140,7 +140,7 @@
 
     <context id="keyword" style-ref="keyword">
       <prefix>(?&lt;=[\s'(])</prefix>
-      <suffix>(?=([\s)]|$))</suffix>
+      <suffix>(?=([\s()]|$))</suffix>
       <keyword>module</keyword>
       <keyword>dump-symbol</keyword>
 
@@ -527,7 +527,7 @@
 
     <context id="function" style-ref="function">
       <prefix>(?&lt;=[\s'(])</prefix>
-      <suffix>(?=([\s)]|$))</suffix>
+      <suffix>(?=([\s()]|$))</suffix>
       <keyword>define</keyword>
       <keyword>define-macro</keyword>
       <keyword>lambda</keyword>
