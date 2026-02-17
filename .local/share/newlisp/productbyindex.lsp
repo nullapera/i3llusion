@@ -13,10 +13,8 @@
   )
   (if (or (< ndx 0) (<= (apply * len) ndx))
     '()
-    (let(
-      rslt '()
-      rem 0
-      )
+    (let(rslt '()
+         rem 0)
       (for(i (-- (length lst)) 0 -1)
         (setq rem (% ndx (len i))
               ndx (/ ndx (len i)))

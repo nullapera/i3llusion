@@ -31,7 +31,7 @@
       (throw-error (append "Can not be deleted! : '" polybarsock "'")))))
 
 (require
-  "Flags" "Cmd" "Cycle" "Slider" "permutations" "case-match" "i3llusion/i3ipc")
+  "Flags" "Cmd" "Cycle" "Slider" "permutations" "i3llusion/i3ipc")
 
 (setq
   scratcheds '()
@@ -89,7 +89,7 @@
   Z:timelimit 80
   Z:timecounter Z:timelimit
   Z:on (Cmd {xset} "s 360 360 dpms 480 600 720")
-Z:off (Cmd {xset} "s off -dpms")
+  Z:off (Cmd {xset} "s off -dpms")
   Z:tickcounter TICKLIMIT
   Z:tickfunc (lambda() (-- Z:timecounter) (checktime))
   Z:systemctl (Cmd {systemctl})
@@ -105,11 +105,11 @@ Z:off (Cmd {xset} "s off -dpms")
 
 (let(p (append basepath "-msg.lsp"))
   (setq lettersfmt (append
-    "%%{A1:" p " %s_1:}"
-    "%%{A2:" p " %s_2:}"
-    "%%{A3:" p " %s_3:}"
-    "%%{A4:" p " %s_4:}"
-    "%%{A5:" p " %s_5:}"
+    "%%{A1:" p " %s1:}"
+    "%%{A2:" p " %s2:}"
+    "%%{A3:" p " %s3:}"
+    "%%{A4:" p " %s4:}"
+    "%%{A5:" p " %s5:}"
     "%%{F%s} %s "
     "%%{A}%%{A}%%{A}%%{A}%%{A}")))
 
@@ -119,12 +119,10 @@ Z:off (Cmd {xset} "s off -dpms")
 
 (define polybarpid
   (spawn 'polybarspawn
-    (let(
-      conn nil
-      data nil
-      parentpid (sys-info 6)
-      socket (net-listen polybarsock)
-      )
+    (let(conn nil
+         data nil
+         parentpid (sys-info 6)
+         socket (net-listen polybarsock))
       (while true
         (setq conn (net-accept socket))
         (until (net-select conn "r" 35000))
@@ -135,35 +133,36 @@ Z:off (Cmd {xset} "s off -dpms")
 
 (define(letters2polybar) (let(
   letters '()
-  envelope (lambda(letter text) (push
-    (format lettersfmt letter letter letter letter letter (:at colors) text)
-    letters -1))
+  envelope (lambda(letter text)
+    (push (format lettersfmt
+                  letter letter letter letter letter (:at colors) text)
+          letters -1))
   )
   (:step colors -1)
   (envelope "M" (M:texts (:to-int M:flx 1 3)))
-  (envelope "P_a"
+  (envelope "Pa"
     (if (:b P:flx 3)
       "Position:"
       (append "P" (first (:at P:cycle)))))
-  (when (:b P:flx 3) (envelope "P_b" (:at P:cycle)))
-  (envelope "N_a" (N:texts (:to-int N:flx '(0 1 3))))
+  (when (:b P:flx 3) (envelope "Pb" (:at P:cycle)))
+  (envelope "Na" (N:texts (:to-int N:flx '(0 1 3))))
   (when (and (:b N:flx 3) (:b N:flx 1))
-    (envelope "N_b" (format {%dK} (:value N:slider))))
+    (envelope "Nb" (format {%dK} (:value N:slider))))
   (envelope "C" (C:texts (:to-int C:flx '(1 3))))
   (if (:b Z:flx 3)
     (begin
-      (envelope "Z_a" (if (:b Z:flx 1) "snooZe: lock" "snooZe: UNlock"))
-      (envelope "Z_b" (format {<  %.1fhrs} (div Z:timelimit 10)))
-      (envelope "Z_c" (append "<  " (:at Z:cycle))))
-    (envelope "Z_d"
+      (envelope "Za" (if (:b Z:flx 1) "snooZe: lock" "snooZe: UNlock"))
+      (envelope "Zb" (format {<  %.1fhrs} (div Z:timelimit 10)))
+      (envelope "Zc" (append "<  " (:at Z:cycle))))
+    (envelope "Zd"
       (format (if (:b Z:flx 1) {Z%.1f} {z%.1f}) (div Z:timecounter 10))))
   (if (:b A:flx 3)
     (begin
-      (envelope "A_a" (if (:b A:flx 1) "Auto:" "Auto: Off"))
+      (envelope "Aa" (if (:b A:flx 1) "Auto:" "Auto: Off"))
       (when (:b A:flx 1)
-        (envelope "A_b" (if (:b A:flx 4) "SavE," "save,"))
-        (envelope "A_c" (if (:b A:flx 5) "MemO" "memo"))))
-    (envelope "A_a" (A:texts (:to-int A:flx '(1 4 5)))))
+        (envelope "Ab" (if (:b A:flx 4) "SavE," "save,"))
+        (envelope "Ac" (if (:b A:flx 5) "MemO" "memo"))))
+    (envelope "Aa" (A:texts (:to-int A:flx '(1 4 5)))))
   (write-line 1 (join letters))))
 
 (define(make-kelvin)
@@ -222,8 +221,7 @@ Z:off (Cmd {xset} "s off -dpms")
   (when (file? conddat)
     (if (read-file conddat)
       (let(lst (parse $it "\n"))
-        (dolist(e LETTERS)
-          (:set-from e:flx (read-expr (pop lst))))
+        (dolist(e LETTERS) (:set-from e:flx (read-expr (pop lst))))
         (:set-to M:cycle (setf (nth 3 (:to-nums M:flx)) 1))
         (:at! P:cycle (int (pop lst)))
         (if (:b N:flx 0)
@@ -251,10 +249,8 @@ Z:off (Cmd {xset} "s off -dpms")
     fcsd (when rf (json (0 -1 rf)))
     )
     (if (and fcsd (= (lookup "type" fcsd) "con"))
-      (let(
-        fwid (lookup "window" fcsd)
-        ffon (ends-with (lookup "floating" fcsd) "on")
-        )
+      (let(fwid (lookup "window" fcsd)
+           ffon (ends-with (lookup "floating" fcsd) "on"))
         (setq lst (replace fwid lst)
               scratcheds (difference scratcheds (difference scratcheds lst))
               x (difference lst scratcheds))
@@ -280,24 +276,18 @@ Z:off (Cmd {xset} "s off -dpms")
   (when (and fcsd (= (lookup "type" fcsd) "con"))
     (BoX fcsd)
     (PRoP BoX:_window_properties)
-    (letn (
-      rec (list PRoP:_class PRoP:_instance (:b M:flx 1))
-      idx (find rec M:memo)
-      r (list (:b M:flx 1) (true? idx) BoX:_floating)
-      )
+    (letn(rec (list PRoP:_class PRoP:_instance (:b M:flx 1))
+          idx (find rec M:memo)
+          r (list (:b M:flx 1) (true? idx) BoX:_floating))
       (if
         (= '(true true "user_on") r) (pop M:memo idx)
         (= '(true nil "user_off") r) (push rec M:memo)
         (= '(nil true "user_off") r) (pop M:memo idx)
         (= '(nil nil "user_on") r) (push rec M:memo))))))
 
-(define(lettershop stamp) (letn(
-  flag nil
-  tail (parse stamp "_")
-  head (pop tail)
-  )
-  (case head
-    ("M" (case (first tail)
+(define(lettershop stamp) (local(flag)
+  (case (pop stamp)
+    ("M" (case stamp
       ("4" (when (:b M:flx 3)
         (:step M:cycle +1)
         (:set-from M:flx (:at M:cycle))))
@@ -305,61 +295,64 @@ Z:off (Cmd {xset} "s off -dpms")
         (:step M:cycle -1)
         (:set-from M:flx (:at M:cycle))))
       (true
-        (:not! M:flx (int (first tail)))
+        (:not! M:flx (int stamp))
         (:set-to M:cycle (:to-nums M:flx)))))
-    ("P" (case-match(r tail)
-      ('(? "3") (:not! P:flx 3))
-      ('("b" "4") (:step P:cycle +1))
-      ('("b" "5") (:step P:cycle -1))))
-    ("N" (case-match(r tail)
-      ('(? "1")
+    ("P" (if
+      (= (last stamp) "3") (:not! P:flx 3)
+      (= stamp "b4") (:step P:cycle +1)
+      (= stamp "b5") (:step P:cycle -1)))
+    ("N" (case (last stamp)
+      ("1"
         (:flag N:flx 0 nil)
         (if (:not! N:flx 1)
           (begin
             (setq N:tickcounter TICKLIMIT)
             (make-kelvin))
           (:run N:off)))
-      ('(? "2") (when (:b N:flx 0)
+      ("2" (when (:b N:flx 0)
         (setq N:tickcounter TICKLIMIT)
         (make-kelvin)
         (:flag N:flx 0 nil)))
-      ('(? "3") (:not! N:flx 3))
-      ('("b" "4")
-        (:flag N:flx 0 true)
-        (:run N:manual (string (:step N:slider +1))))
-      ('("b" "5")
-        (:flag N:flx 0 true)
-        (:run N:manual (string (:step N:slider -1))))))
-    ("C" (case (first tail)
+      ("3" (:not! N:flx 3))
+      (true (case stamp
+        ("b4"
+          (:flag N:flx 0 true)
+          (:run N:manual (string (:step N:slider +1))))
+        ("b5"
+          (:flag N:flx 0 true)
+          (:run N:manual (string (:step N:slider -1))))))))
+    ("C" (case stamp
       ("1" (:run (if (:not! C:flx 1) C:on C:off)))
       ("3" (:not! C:flx 3))))
-    ("Z" (case-match(r tail)
-      ('(? "1") (:run (if (:not! Z:flx 1) Z:on Z:off)))
-      ('(? "2")
+    ("Z" (case (last stamp)
+      ("1" (:run (if (:not! Z:flx 1) Z:on Z:off)))
+      ("2"
         (setq Z:timecounter Z:timelimit
               Z:tickcounter TICKLIMIT)
         (checktime))
-      ('(? "3") (:not! Z:flx 3))
-      ('("b" "4") (++ Z:timelimit))
-      ('("b" "5") (setq Z:timelimit (max (-- Z:timelimit) 2)))
-      ('("c" "4") (:step Z:cycle +1))
-      ('("c" "5") (:step Z:cycle -1))
-      ('("d" "4")
-        (++ Z:timecounter)
-        (setq Z:tickcounter TICKLIMIT))
-      ('("d" "5")
-        (-- Z:timecounter)
-        (setq Z:tickcounter TICKLIMIT)
-        (checktime))))
-    ("A" (case-match(r tail)
-      ('(? "1") (:not! A:flx 1))
-      ('(? "2") (when (post-outs)
+      ("3" (:not! Z:flx 3))
+      (true (case stamp
+        ("b4" (++ Z:timelimit))
+        ("b5" (setq Z:timelimit (max (-- Z:timelimit) 2)))
+        ("c4" (:step Z:cycle +1))
+        ("c5" (:step Z:cycle -1))
+        ("d4"
+          (++ Z:timecounter)
+          (setq Z:tickcounter TICKLIMIT))
+        ("d5"
+          (-- Z:timecounter)
+          (setq Z:tickcounter TICKLIMIT)
+          (checktime))))))
+    ("A" (case (last stamp)
+      ("1" (:not! A:flx 1))
+      ("2" (when (post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
         (setq A:tickcounter TICKLIMIT)))
-      ('(? "3") (:not! A:flx 3))
-      ('("b" ?) (:not! A:flx 4))
-      ('("c" ?) (:not! A:flx 5))))
-    ("X" (case (first tail)
+      ("3" (:not! A:flx 3))
+      (true (case (first stamp)
+        ("b" (:not! A:flx 4))
+        ("c" (:not! A:flx 5))))))
+    ("X" (case stamp
       ("8" (setq flag true))
       ("postouts" (when (post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
@@ -368,7 +361,7 @@ Z:off (Cmd {xset} "s off -dpms")
       ("polytoggle" (on-workspace-focus))
       ("automemo" (when (and (:b A:flx 1) (:b A:flx 5)) (toggle-memo)))
       ("togglememo" (toggle-memo))
-      (true (systemctl (first tail))))))
+      (true (systemctl stamp)))))
   flag))
 
 (define(go2position (lt1 0))
@@ -392,13 +385,15 @@ Z:off (Cmd {xset} "s off -dpms")
                     (!= PRoP:_instance (lookup "instance" (last e))))))))
 
 (define(on-fullscreen)
-  (when (:b Z:flx 1) (let(
-    r (cons BoX:_fullscreen_mode Z:fullscreen_mode)
-    )
-    (cond ((= '(1 0) r) (:run Z:off)
-                        (setq Z:fullscreen_mode 1))
-          ((= '(0 1) r) (:run Z:on)
-                        (setq Z:fullscreen_mode 0))))))
+  (when (:b Z:flx 1)
+    (let(r (cons BoX:_fullscreen_mode Z:fullscreen_mode))
+      (cond
+        ((= '(1 0) r)
+          (:run Z:off)
+          (setq Z:fullscreen_mode 1))
+        ((= '(0 1) r)
+          (:run Z:on)
+          (setq Z:fullscreen_mode 0))))))
 
 (define(on-floating)
   (if (or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
@@ -412,27 +407,26 @@ Z:off (Cmd {xset} "s off -dpms")
 (define(on-new)
   (when (or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
     (PRoP BoX:_window_properties)
-    (let(idx (find (list PRoP:_class PRoP:_instance (:b M:flx 1)) M:memo))
-      (case-match(r (list (:b M:flx 1) (:b M:flx 2) (true? idx)))
-        ('(true true true)
-          (:command-wid ipc BoX:_window "floating disable"))
-        ('(nil true true)
-          (:command-wid ipc BoX:_window "floating enable"))
-        ('(true ? ?)
-          (:command-wid ipc BoX:_window "floating enable"))
-        ('(*)
-          (:command-wid ipc BoX:_window
-            (if (check-wcwi) "floating enable" "floating disable")))))))
+    (letn(idx (find (list PRoP:_class PRoP:_instance (:b M:flx 1)) M:memo)
+          rec (list (:b M:flx 1) (:b M:flx 2) (true? idx)))
+      (if
+        (= '(true true true) rec)
+        (:command-wid ipc BoX:_window "floating disable")
+        (= '(nil true true) rec)
+        (:command-wid ipc BoX:_window "floating enable")
+        (first rec)
+        (:command-wid ipc BoX:_window "floating enable")
+        (:command-wid ipc BoX:_window
+          (if (check-wcwi) "floating enable" "floating disable"))))))
 
 (define(on-move)
-  (unless (= BoX:_scratchpad_state "none") (let(
-    lst (first BoX:_nodes)
-    )
-    (BoX lst)
-    (on-new)
-    (on-floating)
-    (when (ends-with BoX:_floating "on")
-      (:run xprop (string BoX:_window))))))
+  (unless (= BoX:_scratchpad_state "none")
+    (let(lst (first BoX:_nodes))
+      (BoX lst)
+      (on-new)
+      (on-floating)
+      (when (ends-with BoX:_floating "on")
+        (:run xprop (string BoX:_window))))))
 
 (define(on-workspace-focus) (letn(
   json (json-parse (:getworkspaces ipc))
@@ -458,8 +452,7 @@ Z:off (Cmd {xset} "s off -dpms")
         (when (= childpid polybarpid)
           (setq flag (lettershop data))
           (letters2polybar))))
-    (setq data (:receive ipc4sub)
-          json (json-parse data))
+    (setq json (json-parse (:receive ipc4sub)))
     (if (lookup "container" json)
       (case (lookup "change" json)
         ("focus" (BoX $it) (on-fullscreen))

@@ -13,11 +13,9 @@
   var (pop head)
   _that (pop head)
   )
-  (let(
-    var nil
-    rslt nil
-    that _that
-    )
+  (let(var nil
+       rslt nil
+       that _that)
     (doargs(e var)
       (setq var (match (eval (pop e)) that))
       (unless (nil? var) (setq rslt (eval (cons 'begin e)))))
