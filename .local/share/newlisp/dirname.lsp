@@ -7,11 +7,9 @@
 ;;
 (context 'dirname)
 
-(define(dirname:dirname path base?) (let
-  (rslt (if
-    (find path '("." ".." "/" "")) (list path "")
-    (regex {\A(.+)/([^/]*)\z} path) (list $1 $2)
-    (= (first path) "/") (list (pop path) path)
-    '("." ""))
-  )
+(define(dirname:dirname path base?)
+  (let(rslt (if(find path '("." ".." "/" "")) (list path "")
+               (regex {\A(.+)/([^/]*)\z} path) (list $1 $2)
+               (= (first path) "/") (list (pop path) path)
+               '("." "")))
   (if base? rslt (first rslt))))

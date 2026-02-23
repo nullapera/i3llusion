@@ -7,14 +7,14 @@
   'MAGIC "i3-ipc"
   'CMDFMT {[id="%lu"] %s}
   'PACKFMT (format {s%d lu lu} (length MAGIC))
-  'PACKFMTLENGTH (length (pack PACKFMT "" 0 0))
+  'PACKFMTLENGTH (length(pack PACKFMT "" 0 0))
   'COMMAND 0
   'GET_WORKSPACES 1
   'SUBSCRIBE 2
   'GET_TREE 4)
 
 (define(i3ipc:i3ipc path)
-  (if (net-connect path)
+  (if(net-connect path)
     (list (context) $it)
     (throw-error (string (context) " => No connection to: '" path "'"))))
 

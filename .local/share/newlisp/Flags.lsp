@@ -32,18 +32,17 @@
 (define(b idx) ('(nil true) (self .FLAGS idx)))
 
 (define(flag idx value)
-  (setf (self .FLAGS idx) (if (or (null? value) (= value "0")) 0 1)))
+  (setf (self .FLAGS idx) (if(or (null? value) (= value "0")) 0 1)))
 
 (define(not! idx) (setf (self .FLAGS idx) ('(1 0) $it)))
 
 (define(set-from lst) (dolist(e lst) (flag $idx e)))
 
 (define(to-nums a0 a1)
-  (if
-    (nil? a0) (self .FLAGS)
-    (list? a0) (select (self .FLAGS) a0)
-    (nil? a1) (a0 (self .FLAGS))
-    (a0 a1 (self .FLAGS))))
+  (if(nil? a0) (self .FLAGS)
+     (list? a0) (select (self .FLAGS) a0)
+     (nil? a1) (a0 (self .FLAGS))
+     (a0 a1 (self .FLAGS))))
 
 (define(to-bools a0 a1)
   (select '(nil true) (to-nums a0 a1)))

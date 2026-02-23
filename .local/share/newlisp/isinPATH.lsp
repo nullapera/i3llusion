@@ -8,15 +8,14 @@
 ;;
 (context 'isinPATH)
 
-(define(isinPATH:isinPATH) (let(
-  throw? nil
-  missing '()
-  )
-  (doargs(e)
-    (if (= e true)
-      (setq throw? true)
-      (unless (real-path e true) (push e missing -1))))
-  (when (and throw? (true? missing))
-    (throw-error
-      (append "Non-existing file(s) in PATH! : '" (string missing) "'")))
-  (empty? missing)))
+(define(isinPATH:isinPATH)
+  (let(throw? nil
+       missing '())
+    (doargs(e)
+      (if(= e true)
+        (setq throw? true)
+        (unless(real-path e true) (push e missing -1))))
+    (when(and throw? (true? missing))
+      (throw-error
+        (append "Non-existing file(s) in PATH! : '" (string missing) "'")))
+    (empty? missing)))

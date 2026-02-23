@@ -23,9 +23,9 @@
   )
   (dolist(e dirs rslt)
     (setq path (append e "/" alsp ".lsp"))
-    (when (file? path true)
+    (when(file? path true)
       (setq rslt (load path ctx))))
-  (unless (true? rslt)
+  (unless(true? rslt)
     (throw-error (append "Not loaded! : '" alsp "'")))))
 
 
@@ -36,7 +36,7 @@
 (define(require:require)
   (map
     (fn(a)
-      (when (nil? (find a dbase))
+      (when(nil? (find a dbase))
         (push a dbase)
         (include a)))
     (flat (args))))

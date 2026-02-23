@@ -7,7 +7,6 @@
 (context 'extname)
 
 (define(extname:extname path)
-  (if
-    (find path '("." ".." "/" "")) ""
-    (regex {(?<!/|\A)(\.[^.]*)\z} path) $1
-    ""))
+  (if(find path '("." ".." "/" "")) ""
+     (regex {(?<!/|\A)(\.[^.]*)\z} path) $1
+     ""))

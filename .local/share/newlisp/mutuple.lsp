@@ -15,7 +15,7 @@
 
 (define(mutuple:mutuple ctxname keys) (let(
   i nil
-  keys (if (list? keys) keys (parse keys))
+  keys (if(list? keys) keys (parse keys))
   code [text] (begin
     (setq keys[] mutuple:keys)
     (define(keys@) keys[])
@@ -26,11 +26,11 @@
            (expand (lambda() (self mutuple:i)) 'mutuple:i))
       (set (sym (string (keys[] (- mutuple:i 1)) "!"))
            (expand (lambda(arg)
-             (setf (self mutuple:i)
-                   (if (or (primitive? arg) (lambda? arg))
-                     (arg (self mutuple:i))
-                     arg)))
-             'mutuple:i)))) [/text]
+            (setf (self mutuple:i)
+                  (if(or (primitive? arg) (lambda? arg))
+                    (arg(self mutuple:i))
+                    arg)))
+            'mutuple:i)))) [/text]
   )
   (eval-string code (new Class (sym ctxname MAIN)))
   (context MAIN ctxname)))
