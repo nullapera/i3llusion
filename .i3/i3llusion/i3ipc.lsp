@@ -7,7 +7,7 @@
   'MAGIC "i3-ipc"
   'CMDFMT {[id="%lu"] %s}
   'PACKFMT (format {s%d lu lu} (length MAGIC))
-  'PACKFMTLENGTH (length(pack PACKFMT "" 0 0))
+  'PACKFMTLENGTH (length (pack PACKFMT "" 0 0))
   'COMMAND 0
   'GET_WORKSPACES 1
   'SUBSCRIBE 2
@@ -27,12 +27,11 @@
     (self .SOCKET)
     (append (pack PACKFMT MAGIC (length msg) msgtype) msg)))
 
-(define(i3ipc:receive)
-  (local(rslt data)
-    (net-receive (self .SOCKET) data PACKFMTLENGTH)
-    (setq rslt (unpack PACKFMT data))
-    (net-receive (self .SOCKET) data (rslt 1))
-    data))
+(define(i3ipc:receive , rslt data)
+  (net-receive (self .SOCKET) data PACKFMTLENGTH)
+  (setq rslt (unpack PACKFMT data))
+  (net-receive (self .SOCKET) data (rslt 1))
+  data)
 
 (define(chat msgtype msg)
   (send msgtype msg)
