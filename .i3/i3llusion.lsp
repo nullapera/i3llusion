@@ -72,7 +72,7 @@
   N:slider (Slider 6400 2400 6400 50)
   N:tickcounter 0
   N:tickfunc (lambda()
-    (when(and (:?? N:flag 1) (not(:?? N:flag 0))) (make-kelvin)))
+    (when(and (:?? N:flag 1) (not(:?? N:flag 0))) (kelvinize)))
   N:texts '(
     "n" "Nightlight: Off"
     "N" "Nightlight:"
@@ -132,40 +132,39 @@
         (send parentpid data)))
     true))
 
-(define(letters2polybar)
-  (let(letters '()
-       envelope (lambda(letter text)
-        (push (format lettersfmt
-                      letter letter letter letter letter (:at colors) text)
-              letters -1)))
-    (:step colors -1)
-    (envelope "M" (M:texts(:to-int M:flag 1 3)))
-    (envelope "Pa"
-      (if(:?? P:flag 3)
-        "Position:"
-        (append "P" (first (:at P:cycle)))))
-    (when(:?? P:flag 3) (envelope "Pb" (:at P:cycle)))
-    (envelope "Na" (N:texts(:to-int N:flag '(0 1 3))))
-    (when(and (:?? N:flag 3) (:?? N:flag 1))
-      (envelope "Nb" (format {%dK} (:value N:slider))))
-    (envelope "C" (C:texts(:to-int C:flag '(1 3))))
-    (if(:?? Z:flag 3)
-      (begin
-        (envelope "Za" (if(:?? Z:flag 1) "snooZe: lock" "snooZe: UNlock"))
-        (envelope "Zb" (format {<  %.1fhrs} (div Z:timelimit 10)))
-        (envelope "Zc" (append "<  " (:at Z:cycle))))
-      (envelope "Zd"
-        (format (if(:?? Z:flag 1) {Z%.1f} {z%.1f}) (div Z:timecounter 10))))
-    (if(:?? A:flag 3)
-      (begin
-        (envelope "Aa" (if(:?? A:flag 1) "Auto:" "Auto: Off"))
-        (when(:?? A:flag 1)
-          (envelope "Ab" (if(:?? A:flag 4) "SavE," "save,"))
-          (envelope "Ac" (if(:?? A:flag 5) "MemO" "memo"))))
-      (envelope "Aa" (A:texts(:to-int A:flag '(1 4 5)))))
-    (write-line 1 (join letters))))
+(define(letters2polybar) (let(
+  letters '()
+  make (lambda(l txt)
+    (push (format lettersfmt l l l l l (:at colors) txt) letters -1))
+  )
+  (:step colors -1)
+  (make "M" (M:texts(:to-int M:flag 1 3)))
+  (make "Pa"
+    (if(:?? P:flag 3)
+      "Position:"
+      (append "P" (first (:at P:cycle)))))
+  (when(:?? P:flag 3) (make "Pb" (:at P:cycle)))
+  (make "Na" (N:texts(:to-int N:flag '(0 1 3))))
+  (when(and (:?? N:flag 3) (:?? N:flag 1))
+    (make "Nb" (format {%dK} (:value N:slider))))
+  (make "C" (C:texts(:to-int C:flag '(1 3))))
+  (if(:?? Z:flag 3)
+    (begin
+      (make "Za" (if(:?? Z:flag 1) "snooZe: lock" "snooZe: UNlock"))
+      (make "Zb" (format {<  %.1fhrs} (div Z:timelimit 10)))
+      (make "Zc" (append "<  " (:at Z:cycle))))
+    (make "Zd"
+      (format (if(:?? Z:flag 1) {Z%.1f} {z%.1f}) (div Z:timecounter 10))))
+  (if(:?? A:flag 3)
+    (begin
+      (make "Aa" (if(:?? A:flag 1) "Auto:" "Auto: Off"))
+      (when(:?? A:flag 1)
+        (make "Ab" (if(:?? A:flag 4) "SavE," "save,"))
+        (make "Ac" (if(:?? A:flag 5) "MemO" "memo"))))
+    (make "Aa" (A:texts(:to-int A:flag '(1 4 5)))))
+  (write-line 1 (join letters))))
 
-(define(make-kelvin)
+(define(kelvinize)
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
 
 (define(systemctl cmd)
@@ -195,20 +194,21 @@
       (e:tickfunc)))
   (when flag (letters2polybar)))
 
-(define(post-outs)
-  (let(flag true
-       lst (append (map (fn(a) (:nums a:flag)) LETTERS)
-                   (list (:index P:cycle) (:value N:slider)
-                         Z:timelimit (:index Z:cycle))))
-    (unless(write-file memodat (string M:memo))
-      (setq flag nil)
-      (:run notify {critical}
-        (append "'post-outs: Can not write to " memodat "!'")))
-    (unless(write-file conddat (join (map string lst) "\n"))
-      (setq flag nil)
-      (:run notify {critical}
-        (append "'post-outs: Can not write to " conddat "!'")))
-    flag))
+(define(post-outs) (let(
+  flag true
+  lst (append (map (fn(a) (:nums a:flag)) LETTERS)
+              (list (:index P:cycle) (:value N:slider)
+                     Z:timelimit (:index Z:cycle)))
+  )
+  (unless(write-file memodat (string M:memo))
+    (setq flag nil)
+    (:run notify {critical}
+      (append "'post-outs: Can not write to " memodat "!'")))
+  (unless(write-file conddat (join (map string lst) "\n"))
+    (setq flag nil)
+    (:run notify {critical}
+      (append "'post-outs: Can not write to " conddat "!'")))
+  flag))
 
 (define(post-ins)
   (when(file? memodat)
@@ -231,51 +231,54 @@
       (:run notify {critical}
         (append "'post-ins: Can not read from " conddat "!'")))))
 
-(define(propeller)
-  (let(x nil
-       lst '()
-       json (json-parse (:gettree ipc)))
-    (dolist(e (ref-all '("scratchpad_state" ?) json match))
-      (unless(= (json (append e '(1))) "none")
-        (setq x (first (lookup "nodes" (json(0 -1 e)))))
-        (push (lookup "window" x) lst -1)))
-    (when lst
-      (letn(rf (ref '("focused" true) json match)
-            fcsd (when rf (json(0 -1 rf)))
-            fwid (when fcsd (lookup "window" fcsd)))
-        (if fwid
-          (let(ffon (ends-with (lookup "floating" fcsd) "on"))
-            (setq lst (replace fwid lst)
-                  scratcheds (difference scratcheds (difference scratcheds lst))
-                  x (difference lst scratcheds))
-            (when lst
-              (if x
-                (setq x (first x))
-                (setq x (first lst)
-                      scratcheds '()))
-              (push fwid scratcheds -1)
-              (:command-wid ipc fwid (string "swap container with id " x))
-              (:command-wid ipc x
-                (if ffon
-                  "border pixel 6, floating enable"
-                  "border none, floating disable"))
-              (when ffon (:run xprop (string x)))))
-          (:command ipc "scratchpad show"))))))
+(define(propeller) (let(
+  x nil
+  lst '()
+  json (json-parse (:gettree ipc))
+  )
+  (dolist(e (ref-all '("scratchpad_state" ?) json match))
+    (unless(= (json (append e '(1))) "none")
+      (setq x (first (lookup "nodes" (json (0 -1 e)))))
+      (push (lookup "window" x) lst -1)))
+  (when lst (letn(
+    rf (ref '("focused" true) json match)
+    fcsd (when rf (json (0 -1 rf)))
+    )
+    (if(and fcsd (= (lookup "type" fcsd) "con"))
+      (let(ffon (ends-with (lookup "floating" fcsd) "on")
+           fwid (lookup "window" fcsd))
+        (setq lst (replace fwid lst)
+              scratcheds (difference scratcheds (difference scratcheds lst))
+              x (difference lst scratcheds))
+        (when lst
+          (if x
+            (setq x (first x))
+            (setq x (first lst)
+                  scratcheds '()))
+          (push fwid scratcheds -1)
+          (:command-wid ipc fwid (string "swap container with id " x))
+          (:command-wid ipc x
+            (if ffon
+              "border pixel 6, floating enable"
+              "border none, floating disable"))
+          (when ffon (:run xprop (string x)))))
+      (:command ipc "scratchpad show"))))))
 
-(define(toggle-memo)
-  (letn(json (json-parse (:gettree ipc))
-        rf (ref '("focused" true) json match)
-        fcsd (when rf (json(0 -1 rf))))
-    (when(and fcsd (lookup "window" fcsd))
-      (BoX fcsd)
-      (PRoP BoX:_window_properties)
-      (letn(rec (list PRoP:_class PRoP:_instance (:?? M:flag 1))
-            idx (find rec M:memo)
-            r (list (:?? M:flag 1) (true? idx) BoX:_floating))
-        (if(= '(true true "user_on") r) (pop M:memo idx)
-           (= '(true nil "user_off") r) (push rec M:memo)
-           (= '(nil true "user_off") r) (pop M:memo idx)
-           (= '(nil nil "user_on") r) (push rec M:memo))))))
+(define(toggle-memo) (letn(
+  json (json-parse (:gettree ipc))
+  rf (ref '("focused" true) json match)
+  fcsd (when rf (json (0 -1 rf)))
+  )
+  (when(and fcsd (= (lookup "type" fcsd) "con"))
+    (BoX fcsd)
+    (PRoP BoX:_window_properties)
+    (letn(rec (list PRoP:_class PRoP:_instance (:?? M:flag 1))
+          idx (find rec M:memo)
+          r (list (:?? M:flag 1) (true? idx) BoX:_floating))
+      (if(= '(true true "user_on") r) (pop M:memo idx)
+         (= '(true nil "user_off") r) (push rec M:memo)
+         (= '(nil true "user_off") r) (pop M:memo idx)
+         (= '(nil nil "user_on") r) (push rec M:memo))))))
 
 (define(lettershop stamp , flag)
   (case(pop stamp)
@@ -299,11 +302,11 @@
         (if(:toggle N:flag 1)
           (begin
             (setq N:tickcounter TICKLIMIT)
-            (make-kelvin))
+            (kelvinize))
           (:run N:off)))
       ("2" (when(:?? N:flag 0)
         (setq N:tickcounter TICKLIMIT)
-        (make-kelvin)
+        (kelvinize)
         (:no N:flag 0)))
       ("3" (:toggle N:flag 3))
       (true (case stamp
@@ -367,12 +370,13 @@
              (- (+ P:y P:height) ReCT:_height))))
       (:at P:cycle))))
 
-(define(check-wcwi)
-  (let(flag nil
-       json (json-parse (:gettree ipc)))
-    (dolist(e (ref-all '("window_properties" ?) json match true) flag)
-      (setq flag (and (= PRoP:_class (lookup "class" (last e)))
-                      (!= PRoP:_instance (lookup "instance" (last e))))))))
+(define(check-wcwi) (let(
+  flag nil
+  json (json-parse (:gettree ipc))
+  )
+  (dolist(e (ref-all '("window_properties" ?) json match true) flag)
+    (setq flag (and (= PRoP:_class (lookup "class" (last e)))
+                    (!= PRoP:_instance (lookup "instance" (last e))))))))
 
 (define(on-fullscreen)
   (when(:?? Z:flag 1)
@@ -416,12 +420,13 @@
       (when(ends-with BoX:_floating "on")
         (:run xprop (string BoX:_window))))))
 
-(define(on-workspace-focus)
-  (letn(json (json-parse (:getworkspaces ipc))
-        fcsd (json(0 -1 (ref '("focused" true) json match))))
-    (ReCT (lookup "rect" fcsd))
-    (setq P:y ReCT:_y
-          P:height ReCT:_height)))
+(define(on-workspace-focus) (letn(
+  json (json-parse (:getworkspaces ipc))
+  fcsd (json (0 -1 (ref '("focused" true) json match)))
+  )
+  (ReCT (lookup "rect" fcsd))
+  (setq P:y ReCT:_y
+        P:height ReCT:_height)))
 
 ; main loop
 (local(flag data json)

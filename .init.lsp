@@ -34,9 +34,8 @@
 (setq dbase '())
 
 (define(require:require)
-  (map
-    (fn(a)
-      (when(nil? (find a dbase))
-        (push a dbase)
-        (include a)))
-    (flat (args))))
+  (map (fn(a)
+          (when(nil? (find a dbase))
+            (push a dbase)
+            (include a)))
+       (flat (args))))

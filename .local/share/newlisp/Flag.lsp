@@ -5,13 +5,11 @@
 ;;  (setq fl (Flag 8 '(0 1 nil true "" "!=0" () (()) ))) =>
 ;;    (Flag (0 1 0 1 0 1 0 1))
 ;;
-;;  (:num fl 1) => 1
+;;  (:@@ fl 1) => 1
 ;;  (:?? fl 2) => nil
 ;;  (:toggle fl 3) => nil
 ;;  (:nums fl) => (0 1 0 0 0 1 0 1)
 ;;  (:nums fl -2) => (0 1)
-;;  (:bools fl) => (nil true nil nil nil true nil true)
-;;  (:bools fl '(1 3 6)) => (true nil nil)
 ;;  (:to-int fl 0 4) => 4
 ;;  (:to-int fl '(1 5 7)) => 7
 ;;
@@ -51,5 +49,5 @@
      (a0 a1 (self .FLAGS))))
 
 (define(to-int a0 a1)
-  (let (lst (select '("0" "1") (nums a0 a1)))
+  (let(lst (select '("0" "1") (nums a0 a1)))
     (int (join lst) 0 2)))

@@ -23,10 +23,11 @@
 
 (define(at) ((self .LIST) (self .INDEX)))
 
-(define(at! newindex)
-  (let(x (% newindex (self .LENGTH)))
-    (setf (self .INDEX) (if(< x 0) (+ (self .LENGTH) x) x))
-    ((self .LIST) (self .INDEX))))
+(define(at! newindex) (let(
+  x (% newindex (self .LENGTH))
+  )
+  (setf (self .INDEX) (if(< x 0) (+ (self .LENGTH) x) x))
+  ((self .LIST) (self .INDEX))))
 
 (define(step n)
   (if(null? n)
