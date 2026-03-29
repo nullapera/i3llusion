@@ -16,26 +16,27 @@
     "/usr/share/newlisp"
     nlspdir)))))
 
-(define(include:include alsp (ctx 'MAIN)) (let(
-  rslt nil
+(define(include:include lsp (ctx 'MAIN)) (let(
+  flag nil
   path nil
-  dirs (append (list (real-path)) DIRS)
+  dirs (push (real-path) (copy DIRS))
   )
-  (dolist(e dirs rslt)
-    (setq path (append e "/" alsp ".lsp"))
+  (dolist(e dirs flag)
+    (setq path (append e "/" lsp ".lsp"))
     (when(file? path true)
-      (setq rslt (load path ctx))))
-  (unless(true? rslt)
-    (throw-error (append "Not loaded! : '" alsp "'")))))
+      (load path ctx)
+      (setq flag true)))
+  (unless flag
+    (throw-error (append "Not loaded! : '" lsp "'")))))
 
 
 (context 'require)
 
-(setq dbase '())
+(setq inloaded '())
 
 (define(require:require)
   (map (fn(a)
-          (when(nil? (find a dbase))
-            (push a dbase)
+          (when(nil? (find a inloaded))
+            (push a inloaded)
             (include a)))
        (flat (args))))
