@@ -31,14 +31,15 @@
         (min (max (or newval (self .DEFAULT)) (self .MIN))
              (self .MAX))))
 
-(define(valueR newval)
-  (letn(s (self .STEP)
-        r (% newval s))
-    (value!
-      (if(zero? r)
-        newval
-        (+ (- newval r)
-           (if(< (/ s 2) (abs r)) (* (sgn newval) s) 0))))))
+(define(valueR newval) (letn(
+  s (self .STEP)
+  r (% newval s)
+  )
+  (value!
+    (if(zero? r)
+      newval
+      (+ (- newval r)
+          (if(< (/ s 2) (abs r)) (* (sgn newval) s) 0))))))
 
 (define(step n)
   (if(null? n)

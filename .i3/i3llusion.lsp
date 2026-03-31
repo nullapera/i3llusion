@@ -34,6 +34,8 @@
   "Flag" "Cmd" "Cycle" "Slider" "permutations" "i3llusion/i3ipc")
 
 (setq
+  box:box nil
+  vbox:vbox nil
   scratcheds '()
   ipc (i3ipc i3sock)
   ipc4sub (i3ipc i3sock)
@@ -114,10 +116,6 @@
     "%%{F%s} %s "
     "%%{A}%%{A}%%{A}%%{A}%%{A}")))
 
-(define BoX:BoX)
-(define PRoP:PRoP)
-(define ReCT:ReCT)
-
 (define polybarpid
   (spawn 'polybarspawn
     (let(conn nil
@@ -134,10 +132,10 @@
 
 (define(letters2polybar) (let(
   letters '()
+  color (:step colors -1)
   make (lambda(l txt)
-    (push (format lettersfmt l l l l l (:at colors) txt) letters -1))
+    (push (format lettersfmt l l l l l color txt) letters -1))
   )
-  (:step colors -1)
   (make "M" (M:texts(:to-int M:flag 1 3)))
   (make "Pa"
     (if(:?? P:flag 3)
@@ -146,7 +144,7 @@
   (when(:?? P:flag 3) (make "Pb" (:at P:cycle)))
   (make "Na" (N:texts (:to-int N:flag '(0 1 3))))
   (when(and (:?? N:flag 3) (:?? N:flag 1))
-    (make "Nb" (format {%dK} (:value N:slider))))
+    (make "Nb" (string (:value N:slider) "K")))
   (make "C" (C:texts (:to-int C:flag '(1 3))))
   (if(:?? Z:flag 3)
     (begin
@@ -270,9 +268,11 @@
   fcsd (when rf (json (0 -1 rf)))
   )
   (when(and fcsd (number? (lookup "window" fcsd)))
-    (PRoP (lookup "window_properties" fcsd))
     (letn(
-      rec (list PRoP:_class PRoP:_instance (:?? M:flag 1))
+      prop (lookup "window_properties" fcsd)
+      rec (list (lookup "class" prop)
+                (lookup "instance" prop)
+                (:?? M:flag 1))
       idx (find rec M:memo)
       r (list (:?? M:flag 1) (number? idx) (lookup "floating" fcsd))
       )
@@ -360,76 +360,89 @@
       (true (systemctl stamp)))))
   flag)
 
-(define(go2position (lt1 0))
+(define(go2position bx (lt1 0))
   (append "move position "
     (if(= (:at P:cycle) "upside")
-      (let(yo (mul P:height lt1))
-        (ReCT BoX:_rect)
-        (format {%d px %d px} ReCT:_x
-          (if(<= ReCT:_height (- P:height yo)) (+ P:y yo)
-             (<= P:height ReCT:_height) P:y
-             (- (+ P:y P:height) ReCT:_height))))
+      (letn(
+        yo (mul P:height lt1)
+        rect (lookup "rect" bx)
+        height (lookup "height" rect)
+        )
+        (format {%d px %d px}
+          (lookup "x" rect)
+          (if(<= height (- P:height yo)) (+ P:y yo)
+             (<= P:height height) P:y
+             (- (+ P:y P:height) height))))
       (:at P:cycle))))
 
-(define(check-wcwi) (let(
+(define(check-wcwi prop) (let(
   flag nil
+  class (lookup "class" prop)
+  instance (lookup "instance" prop)
   json (json-parse (:gettree ipc))
   )
   (dolist(e (ref-all '("window_properties" ?) json match true) flag)
-    (setq flag (and (= PRoP:_class (lookup "class" (last e)))
-                    (!= PRoP:_instance (lookup "instance" (last e))))))))
+    (setq flag (and (= class (lookup "class" (last e)))
+                    (!= instance (lookup "instance" (last e))))))))
 
-(define(on-fullscreen)
-  (when(:?? Z:flag 1)
-    (let(r (cons BoX:_fullscreen_mode Z:fullscreen_mode))
-      (cond((= '(1 0) r)
-            (:run Z:off)
-            (setq Z:fullscreen_mode 1))
-           ((= '(0 1) r)
-            (:run Z:on)
-            (setq Z:fullscreen_mode 0))))))
+(define(on-fullscreen bx)
+  (when(:?? Z:flag 1) (let(
+    r (cons (lookup "fullscreen_mode" bx) Z:fullscreen_mode)
+    )
+    (cond((= '(1 0) r)
+          (:run Z:off)
+          (setq Z:fullscreen_mode 1))
+          ((= '(0 1) r)
+          (:run Z:on)
+          (setq Z:fullscreen_mode 0))))))
 
-(define(on-floating)
-  (if(or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
-    (:command-wid ipc BoX:_window
-      (if(ends-with BoX:_floating "on")
-        (append "border pixel 6, " (go2position))
+(define(on-floating bx) (let (
+  wtype (lookup "window_type" bx)
+  )
+  (if(or (= wtype "normal") (= wtype "unknown"))
+    (:command-wid ipc (lookup "window" bx)
+      (if(ends-with (lookup "floating" bx) "on")
+        (append "border pixel 6, " (go2position bx))
         "border none"))
-    (when(and (= (:at P:cycle) "upside") (ends-with BoX:_floating "on"))
-      (:command-wid ipc BoX:_window (go2position 0.1)))))
+    (when(and (= (:at P:cycle) "upside")
+              (ends-with (lookup "floating" bx) "on"))
+      (:command-wid ipc (lookup "window" bx) (go2position bx 0.1))))))
 
-(define(on-new)
-  (when(or (= BoX:_window_type "normal") (= BoX:_window_type "unknown"))
-    (PRoP BoX:_window_properties)
-    (letn(
-      idx (find (list PRoP:_class PRoP:_instance (:?? M:flag 1)) M:memo)
-      rec (list (:?? M:flag 1) (:?? M:flag 2) (number? idx))
-      )
-      (if(= '(true true true) rec)
-         (:command-wid ipc BoX:_window "floating disable")
-         (= '(nil true true) rec)
-         (:command-wid ipc BoX:_window "floating enable")
-         (first rec)
-         (:command-wid ipc BoX:_window "floating enable")
-         (:command-wid ipc BoX:_window
-          (if(check-wcwi) "floating enable" "floating disable"))))))
+(define(on-new bx) (let(
+  wtype (lookup "window_type" bx)
+  )
+  (when(or (= wtype "normal") (= wtype "unknown")) (letn(
+    prop (lookup "window_properties" bx)
+    idx (find (list (lookup "class" prop)
+                    (lookup "instance" prop)
+                    (:?? M:flag 1))
+              M:memo)
+    rec (list (:?? M:flag 1) (:?? M:flag 2) (number? idx))
+    )
+    (if(= '(true true true) rec)
+       (:command-wid ipc (lookup "window" bx) "floating disable")
+       (= '(nil true true) rec)
+       (:command-wid ipc (lookup "window" bx) "floating enable")
+       (first rec)
+       (:command-wid ipc (lookup "window" bx) "floating enable")
+       (:command-wid ipc (lookup "window" bx)
+          (if(check-wcwi prop) "floating enable" "floating disable")))))))
 
-(define(on-move)
-  (unless(= BoX:_scratchpad_state "none")
-    (let(lst (first BoX:_nodes))
-      (BoX lst)
-      (on-new)
-      (on-floating)
-      (when(ends-with BoX:_floating "on")
-        (:run xprop (string BoX:_window))))))
+(define(on-move bx)
+  (unless(= (lookup "scratchpad_state" bx) "none")
+    (setq vbox:vbox (first (lookup "nodes" bx)))
+    (on-new vbox)
+    (on-floating vbox)
+    (when(ends-with (lookup "floating" vbox) "on")
+        (:run xprop (string (lookup "window" vbox))))))
 
 (define(on-workspace-focus) (letn(
   json (json-parse (:getworkspaces ipc))
   fcsd (json (0 -1 (ref '("focused" true) json match)))
+  rect (lookup "rect" fcsd)
   )
-  (ReCT (lookup "rect" fcsd))
-  (setq P:y ReCT:_y
-        P:height ReCT:_height)))
+  (setq P:y (lookup "y" rect)
+        P:height (lookup "height" rect))))
 
 ; main loop
 (local(flag data json)
@@ -450,13 +463,13 @@
           (setq flag (lettershop data))
           (letters2polybar))))
     (setq json (json-parse (:receive ipc4sub)))
-    (if(lookup "container" json)
+    (if(setq box:box (lookup "container" json))
       (case(lookup "change" json)
-        ("focus" (BoX $it) (on-fullscreen))
-        ("new" (BoX $it) (on-new))
-        ("floating" (BoX $it) (on-floating))
-        ("move" (BoX $it) (on-move))
-        ("fullscreen_mode" (BoX $it) (on-fullscreen)))
+        ("focus" (on-fullscreen box))
+        ("new" (on-new box))
+        ("floating" (on-floating box))
+        ("move" (on-move box))
+        ("fullscreen_mode" (on-fullscreen box)))
       (when(lookup "current" json)
         (case(lookup "change" json)
           ("focus" (on-workspace-focus))))))
