@@ -50,7 +50,7 @@
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
 
 (constant
-  'BESIX 6 'TICKLIMIT (/ 3600 10 BESIX))
+  'WARNLIMIT 2 'BESIX 6 'TICKLIMIT (/ 3600 10 BESIX))
 
 (setq ; M: Mode
   M:flag (Flag 4 '(0 1 1))
@@ -104,7 +104,7 @@
   A:texts '("a" "a" "a" "a" "Asm" "AsM" "ASm" "ASM"))
 
 (constant
-  'LETTERS (list M P N C Z A) 'TIX (list N Z A))
+  'LETTERS (list M P N C Z A) 'TICKS (list N Z A))
 
 (let(p (append basepath "-msg.lsp"))
   (setq lettersfmt (append
@@ -136,7 +136,7 @@
   make (lambda(l txt)
     (push (format lettersfmt l l l l l color txt) letters -1))
   )
-  (make "M" (M:texts(:to-int M:flag 1 3)))
+  (make "M" (M:texts (:to-int M:flag 1 3)))
   (make "Pa"
     (if(:?? P:flag 3)
       "Position:"
@@ -178,14 +178,14 @@
 
 (define(checktime)
   (if(<= Z:timecounter 0)
-     (systemctl(:at Z:cycle))
-     (<= Z:timecounter 2)
+     (systemctl (:at Z:cycle))
+     (<= Z:timecounter WARNLIMIT)
      (:run notify {critical}
        (append "'snooZe: Close to " (:at Z:cycle) "!'"))))
 
 (define(remit , flag)
   (timer 'remit BESIX)
-  (dolist(e TIX)
+  (dolist(e TICKS)
     (when(<= (-- e:tickcounter) 0)
       (setq e:tickcounter TICKLIMIT
             flag true)
@@ -221,7 +221,7 @@
         (:set-to M:cycle (setf (nth 3 (:nums M:flag)) 1))
         (:at! P:cycle (int (pop lst)))
         (if(:?? N:flag 0)
-          (:run N:manual (string (:value! N:slider (int (pop lst)))))
+          (:run N:manual (:value! N:slider (int (pop lst))))
           (pop lst))
         (setq Z:timelimit (int (pop lst))
               Z:timecounter Z:timelimit)
@@ -259,7 +259,7 @@
             (if ffon
               "border pixel 6, floating enable"
               "border none, floating disable"))
-          (when ffon (:run xprop (string x)))))
+          (when ffon (:run xprop x))))
       (:command ipc "scratchpad show"))))))
 
 (define(toggle-memo) (letn(
@@ -267,19 +267,18 @@
   rf (ref '("focused" true) json match)
   fcsd (when rf (json (0 -1 rf)))
   )
-  (when(and fcsd (number? (lookup "window" fcsd)))
-    (letn(
-      prop (lookup "window_properties" fcsd)
-      rec (list (lookup "class" prop)
-                (lookup "instance" prop)
-                (:?? M:flag 1))
-      idx (find rec M:memo)
-      r (list (:?? M:flag 1) (number? idx) (lookup "floating" fcsd))
-      )
-      (if(= '(true true "user_on") r) (pop M:memo idx)
-         (= '(true nil "user_off") r) (push rec M:memo)
-         (= '(nil true "user_off") r) (pop M:memo idx)
-         (= '(nil nil "user_on") r) (push rec M:memo))))))
+  (when(and fcsd (number? (lookup "window" fcsd))) (letn(
+    prop (lookup "window_properties" fcsd)
+    rec (list (lookup "class" prop)
+              (lookup "instance" prop)
+              (:?? M:flag 1))
+    idx (find rec M:memo)
+    r (list (:?? M:flag 1) (number? idx) (lookup "floating" fcsd))
+    )
+    (if(= '(true true "user_on") r) (pop M:memo idx)
+        (= '(true nil "user_off") r) (push rec M:memo)
+        (= '(nil true "user_off") r) (pop M:memo idx)
+        (= '(nil nil "user_on") r) (push rec M:memo))))))
 
 (define(lettershop stamp , flag)
   (case(pop stamp)
@@ -313,10 +312,10 @@
       (true (case stamp
         ("b4"
           (:yes N:flag 0)
-          (:run N:manual (string (:step N:slider +1))))
+          (:run N:manual (:step N:slider +1)))
         ("b5"
           (:yes N:flag 0)
-          (:run N:manual (string (:step N:slider -1))))))))
+          (:run N:manual (:step N:slider -1)))))))
     ("C" (case stamp
       ("1" (:run (if(:toggle C:flag 1) C:on C:off)))
       ("3" (:toggle C:flag 3))))
@@ -329,7 +328,7 @@
       ("3" (:toggle Z:flag 3))
       (true (case stamp
         ("b4" (++ Z:timelimit))
-        ("b5" (setq Z:timelimit (max (-- Z:timelimit) 2)))
+        ("b5" (setq Z:timelimit (max (-- Z:timelimit) WARNLIMIT)))
         ("c4" (:step Z:cycle +1))
         ("c5" (:step Z:cycle -1))
         ("d4"
@@ -363,11 +362,9 @@
 (define(go2position bx (lt1 0))
   (append "move position "
     (if(= (:at P:cycle) "upside")
-      (letn(
-        yo (mul P:height lt1)
-        rect (lookup "rect" bx)
-        height (lookup "height" rect)
-        )
+      (letn(yo (mul P:height lt1)
+            rect (lookup "rect" bx)
+            height (lookup "height" rect))
         (format {%d px %d px}
           (lookup "x" rect)
           (if(<= height (- P:height yo)) (+ P:y yo)
@@ -389,12 +386,13 @@
   (when(:?? Z:flag 1) (let(
     r (cons (lookup "fullscreen_mode" bx) Z:fullscreen_mode)
     )
-    (cond((= '(1 0) r)
-          (:run Z:off)
-          (setq Z:fullscreen_mode 1))
-          ((= '(0 1) r)
-          (:run Z:on)
-          (setq Z:fullscreen_mode 0))))))
+    (cond
+      ((= '(1 0) r)
+        (:run Z:off)
+        (setq Z:fullscreen_mode 1))
+      ((= '(0 1) r)
+        (:run Z:on)
+        (setq Z:fullscreen_mode 0))))))
 
 (define(on-floating bx) (let (
   wtype (lookup "window_type" bx)
@@ -434,7 +432,7 @@
     (on-new vbox)
     (on-floating vbox)
     (when(ends-with (lookup "floating" vbox) "on")
-        (:run xprop (string (lookup "window" vbox))))))
+        (:run xprop (lookup "window" vbox)))))
 
 (define(on-workspace-focus) (letn(
   json (json-parse (:getworkspaces ipc))

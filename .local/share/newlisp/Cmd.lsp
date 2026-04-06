@@ -17,8 +17,7 @@
 (define(Cmd:Cmd cmd) (list (context) cmd (args)))
 
 (define(dry-run)
-  (join (cons (self .CMD)
-              (map string (flat (mesh (self .ARGS) (args)))))
+  (join (map string (cons (self .CMD) (flat (mesh (self .ARGS) (args)))))
         " "))
 
 (define(run) (exec (apply dry-run (args))))
