@@ -20,7 +20,7 @@
 (let(
   selfpid (sys-info 7)
   pids (find-all
-    "i3llusion.lsp"
+    "i3llusion"
     (exec {ps -C newlisp -o pid,args})
     (int (first (parse $it)))
     find)
@@ -36,8 +36,9 @@
 (setq
   box:box nil
   vbox:vbox nil
+  memo:memo nil
   scratcheds '()
-  ipc (i3ipc i3sock)
+  ipc4cmd (i3ipc i3sock)
   ipc4sub (i3ipc i3sock)
   colors (Cycle (map
     (fn(a) (join (cons "#" a)))
@@ -48,6 +49,16 @@
   notify (Cmd {notify-send} "-u" "'** i3llusion **'")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
+
+(let(p (append basepath "-msg.lsp"))
+  (setq lettersfmt (append
+    "%%{A1:" p " %s1:}"
+    "%%{A2:" p " %s2:}"
+    "%%{A3:" p " %s3:}"
+    "%%{A4:" p " %s4:}"
+    "%%{A5:" p " %s5:}"
+    "%%{F%s} %s "
+    "%%{A}%%{A}%%{A}%%{A}%%{A}")))
 
 (constant
   'WARNLIMIT 2 'BESIX 6 'TICKLIMIT (/ 3600 10 BESIX))
@@ -61,11 +72,13 @@
     "m+" "Mode: UnFloatingMemo"
     "M" "Mode: Floating"
     "M+" "Mode: FloatingMemo"))
+
 (setq ; P: Position
   P:flag (Flag 4)
   P:y 0
   P:height 0
   P:cycle (Cycle '("center" "mouse" "upside")))
+
 (setq ; N: Nightlight
   N:flag (Flag 4 '(0 1))
   N:on (Cmd {redshift} "-v -r -P -o -m randr -l 48.25:20.63 -t 6200:4200 2>&1")
@@ -73,18 +86,18 @@
   N:manual (Cmd {redshift} "-r -P -m randr -O")
   N:slider (Slider 6400 2400 6400 50)
   N:tickcounter 0
-  N:tickfunc (lambda()
-    (when(and (:?? N:flag 1) (not(:?? N:flag 0))) (kelvinize)))
   N:texts '(
     "n" "Nightlight: Off"
     "N" "Nightlight:"
     nil nil
     "!N" "!Nightlight:"))
+
 (setq ; C: Compositor
   C:flag (Flag 4 '(0 1))
   C:on (Cmd {picom} "-b --config" (append basepath "-picom.conf"))
   C:off (Cmd {pkill} "picom")
   C:texts '("c" "Compositor: Off" "C" "Compositor: On"))
+
 (setq ; Z: snooZe
   Z:flag (Flag 4 '(0 1))
   Z:fullscreen_mode 0
@@ -93,28 +106,25 @@
   Z:on (Cmd {xset} "s 360 360 dpms 480 600 720")
   Z:off (Cmd {xset} "s off -dpms")
   Z:tickcounter TICKLIMIT
-  Z:tickfunc (lambda() (-- Z:timecounter) (checktime))
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
+
 (setq ; A: Auto{save,memo}
   A:flag (Flag 6 '(0 1 0 0 1 1))
   A:tickcounter 0
-  A:tickfunc (lambda()
-    (when(and (:?? A:flag 1) (:?? A:flag 4)) (post-outs)))
   A:texts '("a" "a" "a" "a" "Asm" "AsM" "ASm" "ASM"))
+
+(define(N:tick)
+  (when(and (:?? N:flag 1) (not(:?? N:flag 0))) (kelvinize)))
+
+(define(Z:tick)
+  (-- Z:timecounter) (checktime))
+
+(define(A:tick)
+  (when(and (:?? A:flag 1) (:?? A:flag 4)) (post-outs)))
 
 (constant
   'LETTERS (list M P N C Z A) 'TICKS (list N Z A))
-
-(let(p (append basepath "-msg.lsp"))
-  (setq lettersfmt (append
-    "%%{A1:" p " %s1:}"
-    "%%{A2:" p " %s2:}"
-    "%%{A3:" p " %s3:}"
-    "%%{A4:" p " %s4:}"
-    "%%{A5:" p " %s5:}"
-    "%%{F%s} %s "
-    "%%{A}%%{A}%%{A}%%{A}%%{A}")))
 
 (define polybarpid
   (spawn 'polybarspawn
@@ -166,22 +176,20 @@
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
 
 (define(systemctl cmd)
-  (timer (fn()
-    (setq Z:timecounter Z:timelimit
-          Z:tickcounter TICKLIMIT
-          N:tickcounter 0)
-    (remit)) BESIX)
+  (setq Z:timecounter Z:timelimit
+        Z:tickcounter TICKLIMIT
+        N:tickcounter 0)
   (when(and (:?? A:flag 1) (:?? A:flag 4))
     (post-outs)
     (setq A:tickcounter TICKLIMIT))
   (:run Z:systemctl cmd))
 
 (define(checktime)
-  (if(<= Z:timecounter 0)
-     (systemctl (:at Z:cycle))
-     (<= Z:timecounter WARNLIMIT)
-     (:run notify {critical}
-       (append "'snooZe: Close to " (:at Z:cycle) "!'"))))
+  (unless(< WARNLIMIT Z:timecounter)
+    (if(< 0 Z:timecounter)
+      (:run notify {critical}
+        (append "'snooZe: Close to " (:at Z:cycle) "!'"))
+      (systemctl (:at Z:cycle)))))
 
 (define(remit , flag)
   (timer 'remit BESIX)
@@ -189,14 +197,14 @@
     (when(<= (-- e:tickcounter) 0)
       (setq e:tickcounter TICKLIMIT
             flag true)
-      (e:tickfunc)))
+      (e:tick)))
   (when flag (letters2polybar)))
 
 (define(post-outs) (let(
   flag true
-  lst (append (map (fn(a) (:nums a:flag)) LETTERS)
-              (list (:index P:cycle) (:value N:slider)
-                     Z:timelimit (:index Z:cycle)))
+  lst (append
+    (map (fn(a) (:nums a:flag)) LETTERS)
+    (list (:index P:cycle) (:value N:slider) Z:timelimit (:index Z:cycle)))
   )
   (unless(write-file memodat (string M:memo))
     (setq flag nil)
@@ -229,56 +237,48 @@
       (:run notify {critical}
         (append "'post-ins: Can not read from " conddat "!'")))))
 
-(define(propeller) (let(
-  x nil
+(define(propeller , x fcsd) (let(
   lst '()
-  json (json-parse (:gettree ipc))
   )
-  (dolist(e (ref-all '("scratchpad_state" ?) json match))
-    (unless(= (json (append e '(1))) "none")
-      (setq x (first (lookup "nodes" (json (0 -1 e)))))
-      (push (lookup "window" x) lst -1)))
-  (when lst (letn(
-    rf (ref '("focused" true) json match)
-    fcsd (when rf (json (0 -1 rf)))
+  (:seek-tree ipc4cmd (fn(e)
+    (unless(= (lookup "scratchpad_state" e) "none")
+      (push (lookup "window" (first (lookup "nodes" e))) lst -1))
+    (when(= (lookup "focused" e) true) (setq fcsd e))))
+  (when lst (let(
     fwid (when fcsd (lookup "window" fcsd))
     )
     (if(number? fwid)
       (let(ffon (ends-with (lookup "floating" fcsd) "on"))
-        (setq lst (replace fwid lst)
-              scratcheds (difference scratcheds (difference scratcheds lst))
-              x (difference lst scratcheds))
+        (setq lst (replace fwid lst))
         (when lst
+          (setq scratcheds (difference scratcheds (difference scratcheds lst))
+                x (difference lst scratcheds))
           (if x
             (setq x (first x))
             (setq x (first lst)
                   scratcheds '()))
           (push fwid scratcheds -1)
-          (:command-wid ipc fwid (string "swap container with id " x))
-          (:command-wid ipc x
+          (:command-wid ipc4cmd fwid (string "swap container with id " x))
+          (:command-wid ipc4cmd x
             (if ffon
               "border pixel 6, floating enable"
               "border none, floating disable"))
           (when ffon (:run xprop x))))
-      (:command ipc "scratchpad show"))))))
+      (:command ipc4cmd "scratchpad show"))))))
 
-(define(toggle-memo) (letn(
-  json (json-parse (:gettree ipc))
-  rf (ref '("focused" true) json match)
-  fcsd (when rf (json (0 -1 rf)))
-  )
-  (when(and fcsd (number? (lookup "window" fcsd))) (letn(
-    prop (lookup "window_properties" fcsd)
+(define(toggle-memo)
+  (when memo (letn(
+    prop (lookup "window_properties" memo)
     rec (list (lookup "class" prop)
               (lookup "instance" prop)
               (:?? M:flag 1))
     idx (find rec M:memo)
-    r (list (:?? M:flag 1) (number? idx) (lookup "floating" fcsd))
+    r (list (:?? M:flag 1) (number? idx) (lookup "floating" memo))
     )
     (if(= '(true true "user_on") r) (pop M:memo idx)
-        (= '(true nil "user_off") r) (push rec M:memo)
-        (= '(nil true "user_off") r) (pop M:memo idx)
-        (= '(nil nil "user_on") r) (push rec M:memo))))))
+       (= '(true nil "user_off") r) (push rec M:memo)
+       (= '(nil true "user_off") r) (pop M:memo idx)
+       (= '(nil nil "user_on") r) (push rec M:memo)))))
 
 (define(lettershop stamp , flag)
   (case(pop stamp)
@@ -372,17 +372,18 @@
              (- (+ P:y P:height) height))))
       (:at P:cycle))))
 
-(define(check-wcwi prop) (let(
-  flag nil
+(define(check-wcwi prop , wp) (let(
   class (lookup "class" prop)
   instance (lookup "instance" prop)
-  json (json-parse (:gettree ipc))
   )
-  (dolist(e (ref-all '("window_properties" ?) json match true) flag)
-    (setq flag (and (= class (lookup "class" (last e)))
-                    (!= instance (lookup "instance" (last e))))))))
+  (catch (:seek-tree ipc4cmd (fn(e)
+    (when(setq wp (lookup "window_properties" e))
+      (when(and (= class (lookup "class" wp))
+                (!= instance (lookup "instance" wp)))))
+        (throw true))))))
 
 (define(on-fullscreen bx)
+  (setq memo:memo bx)
   (when(:?? Z:flag 1) (let(
     r (cons (lookup "fullscreen_mode" bx) Z:fullscreen_mode)
     )
@@ -397,33 +398,33 @@
 (define(on-floating bx) (let (
   wtype (lookup "window_type" bx)
   )
+  (setq memo:memo bx)
   (if(or (= wtype "normal") (= wtype "unknown"))
-    (:command-wid ipc (lookup "window" bx)
+    (:command-wid ipc4cmd (lookup "window" bx)
       (if(ends-with (lookup "floating" bx) "on")
         (append "border pixel 6, " (go2position bx))
         "border none"))
     (when(and (= (:at P:cycle) "upside")
               (ends-with (lookup "floating" bx) "on"))
-      (:command-wid ipc (lookup "window" bx) (go2position bx 0.1))))))
+      (:command-wid ipc4cmd (lookup "window" bx) (go2position bx 0.1))))))
 
 (define(on-new bx) (let(
   wtype (lookup "window_type" bx)
   )
   (when(or (= wtype "normal") (= wtype "unknown")) (letn(
     prop (lookup "window_properties" bx)
-    idx (find (list (lookup "class" prop)
-                    (lookup "instance" prop)
-                    (:?? M:flag 1))
-              M:memo)
+    idx (find
+      (list (lookup "class" prop) (lookup "instance" prop) (:?? M:flag 1))
+      M:memo)
     rec (list (:?? M:flag 1) (:?? M:flag 2) (number? idx))
     )
     (if(= '(true true true) rec)
-       (:command-wid ipc (lookup "window" bx) "floating disable")
+       (:command-wid ipc4cmd (lookup "window" bx) "floating disable")
        (= '(nil true true) rec)
-       (:command-wid ipc (lookup "window" bx) "floating enable")
+       (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
        (first rec)
-       (:command-wid ipc (lookup "window" bx) "floating enable")
-       (:command-wid ipc (lookup "window" bx)
+       (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
+       (:command-wid ipc4cmd (lookup "window" bx)
           (if(check-wcwi prop) "floating enable" "floating disable")))))))
 
 (define(on-move bx)
@@ -432,15 +433,17 @@
     (on-new vbox)
     (on-floating vbox)
     (when(ends-with (lookup "floating" vbox) "on")
-        (:run xprop (lookup "window" vbox)))))
+      (:run xprop (lookup "window" vbox)))))
 
-(define(on-workspace-focus) (letn(
-  json (json-parse (:getworkspaces ipc))
-  fcsd (json (0 -1 (ref '("focused" true) json match)))
-  rect (lookup "rect" fcsd)
+(define(on-workspace-focus , rect) (let(
+  lst (json-parse (:getworkspaces ipc4cmd))
   )
-  (setq P:y (lookup "y" rect)
-        P:height (lookup "height" rect))))
+  (setq memo:memo nil)
+  (dolist (e lst rect)
+    (when(= (lookup "focused" e) true)
+      (setq rect (lookup "rect" e)
+            P:y (lookup "y" rect)
+            P:height (lookup "height" rect))))))
 
 ; main loop
 (local(flag data json)
@@ -471,7 +474,7 @@
       (when(lookup "current" json)
         (case(lookup "change" json)
           ("focus" (on-workspace-focus))))))
-  (:close ipc)
+  (:close ipc4cmd)
   (:close ipc4sub)
   (when(and (:?? A:flag 1) (:?? A:flag 4)) (post-outs)))
 
