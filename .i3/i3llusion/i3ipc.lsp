@@ -47,11 +47,13 @@
 
 (define(gettree) (chat GET_TREE ""))
 
-(define(seek-tree func , e) (letn(
+(define(seek-tree func) (letn(
   json (json-parse (gettree))
   lst (append (lookup "nodes" json) (lookup "floating_nodes" json))
+  it (pop lst)
   )
-  (while(setq e (pop lst))
-    (unless(= (lookup "layout" e) "dockarea")
-      (func e)
-      (extend lst (lookup "nodes" e) (lookup "floating_nodes" e))))))
+  (while it
+    (unless(= (lookup "layout" it) "dockarea")
+      (func it)
+      (extend lst (lookup "nodes" it) (lookup "floating_nodes" it)))
+    (setq it (pop lst)))))

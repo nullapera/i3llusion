@@ -36,7 +36,7 @@
 (setq
   box:box nil
   vbox:vbox nil
-  memo:memo nil
+  drawer nil
   scratcheds '()
   ipc4cmd (i3ipc i3sock)
   ipc4sub (i3ipc i3sock)
@@ -85,6 +85,7 @@
   N:off (Cmd {redshift} "-x -m randr")
   N:manual (Cmd {redshift} "-r -P -m randr -O")
   N:slider (Slider 6400 2400 6400 50)
+  N:tick (lambda() (when(and (:?? N:flag 1) (not(:?? N:flag 0))) (kelvinize)))
   N:tickcounter 0
   N:texts '(
     "n" "Nightlight: Off"
@@ -105,23 +106,16 @@
   Z:timecounter Z:timelimit
   Z:on (Cmd {xset} "s 360 360 dpms 480 600 720")
   Z:off (Cmd {xset} "s off -dpms")
+  Z:tick (lambda() (-- Z:timecounter) (checktime))
   Z:tickcounter TICKLIMIT
   Z:systemctl (Cmd {systemctl})
   Z:cycle (Cycle '("suspend" "hibernate" "poweroff")))
 
-(setq ; A: Auto{save,memo}
+(setq ; A: Automate
   A:flag (Flag 6 '(0 1 0 0 1 1))
   A:tickcounter 0
+  A:tick (lambda() (when(and (:?? A:flag 1) (:?? A:flag 4)) (post-outs)))
   A:texts '("a" "a" "a" "a" "Asm" "AsM" "ASm" "ASM"))
-
-(define(N:tick)
-  (when(and (:?? N:flag 1) (not(:?? N:flag 0))) (kelvinize)))
-
-(define(Z:tick)
-  (-- Z:timecounter) (checktime))
-
-(define(A:tick)
-  (when(and (:?? A:flag 1) (:?? A:flag 4)) (post-outs)))
 
 (constant
   'LETTERS (list M P N C Z A) 'TICKS (list N Z A))
@@ -146,16 +140,21 @@
   make (lambda(l txt)
     (push (format lettersfmt l l l l l color txt) letters -1))
   )
+  ; Mode
   (make "M" (M:texts (:to-int M:flag 1 3)))
+  ; Position
   (make "Pa"
     (if(:?? P:flag 3)
       "Position:"
       (append "P" (first (:at P:cycle)))))
   (when(:?? P:flag 3) (make "Pb" (:at P:cycle)))
+  ; Nightlight
   (make "Na" (N:texts (:to-int N:flag '(0 1 3))))
   (when(and (:?? N:flag 3) (:?? N:flag 1))
     (make "Nb" (string (:value N:slider) "K")))
+  ; Compositor
   (make "C" (C:texts (:to-int C:flag '(1 3))))
+  ; snooZe
   (if(:?? Z:flag 3)
     (begin
       (make "Za" (if(:?? Z:flag 1) "snooZe: lock" "snooZe: UNlock"))
@@ -163,6 +162,7 @@
       (make "Zc" (append "<  " (:at Z:cycle))))
     (make "Zd"
       (format (if(:?? Z:flag 1) {Z%.1f} {z%.1f}) (div Z:timecounter 10))))
+  ; Automate
   (if(:?? A:flag 3)
     (begin
       (make "Aa" (if(:?? A:flag 1) "Auto:" "Auto: Off"))
@@ -237,8 +237,9 @@
       (:run notify {critical}
         (append "'post-ins: Can not read from " conddat "!'")))))
 
-(define(propeller , x fcsd) (let(
+(define(propeller) (let(
   lst '()
+  fcsd nil
   )
   (:seek-tree ipc4cmd (fn(e)
     (unless(= (lookup "scratchpad_state" e) "none")
@@ -248,40 +249,40 @@
     fwid (when fcsd (lookup "window" fcsd))
     )
     (if(number? fwid)
-      (let(ffon (ends-with (lookup "floating" fcsd) "on"))
+      (let(ffon (ends-with (lookup "floating" fcsd) "on")
+           it nil)
         (setq lst (replace fwid lst))
         (when lst
           (setq scratcheds (difference scratcheds (difference scratcheds lst))
-                x (difference lst scratcheds))
-          (if x
-            (setq x (first x))
-            (setq x (first lst)
+                it (difference lst scratcheds))
+          (if it
+            (setq it (first it))
+            (setq it (first lst)
                   scratcheds '()))
           (push fwid scratcheds -1)
-          (:command-wid ipc4cmd fwid (string "swap container with id " x))
-          (:command-wid ipc4cmd x
+          (:command-wid ipc4cmd fwid (string "swap container with id " it))
+          (:command-wid ipc4cmd it
             (if ffon
               "border pixel 6, floating enable"
               "border none, floating disable"))
-          (when ffon (:run xprop x))))
+          (when ffon (:run xprop it))))
       (:command ipc4cmd "scratchpad show"))))))
 
 (define(toggle-memo)
-  (when memo (letn(
-    prop (lookup "window_properties" memo)
-    rec (list (lookup "class" prop)
-              (lookup "instance" prop)
-              (:?? M:flag 1))
+  (when drawer (letn(
+    prop (lookup "window_properties" drawer)
+    rec (list (lookup "class" prop) (lookup "instance" prop) (:?? M:flag 1))
     idx (find rec M:memo)
-    r (list (:?? M:flag 1) (number? idx) (lookup "floating" memo))
+    it (list (:?? M:flag 1) (number? idx) (lookup "floating" drawer))
     )
-    (if(= '(true true "user_on") r) (pop M:memo idx)
-       (= '(true nil "user_off") r) (push rec M:memo)
-       (= '(nil true "user_off") r) (pop M:memo idx)
-       (= '(nil nil "user_on") r) (push rec M:memo)))))
+    (if(= '(true true "user_on") it) (pop M:memo idx)
+       (= '(true nil "user_off") it) (push rec M:memo)
+       (= '(nil true "user_off") it) (pop M:memo idx)
+       (= '(nil nil "user_on") it) (push rec M:memo)))))
 
 (define(lettershop stamp , flag)
   (case(pop stamp)
+    ; Mode
     ("M" (case stamp
       ("4" (when(:?? M:flag 3)
         (:step M:cycle +1)
@@ -292,10 +293,12 @@
       (true
         (:toggle M:flag (int stamp))
         (:set-to M:cycle (:nums M:flag)))))
+    ; Position
     ("P" (if
       (= (last stamp) "3") (:toggle P:flag 3)
       (= stamp "b4") (:step P:cycle +1)
       (= stamp "b5") (:step P:cycle -1)))
+    ; Nightlight
     ("N" (case(last stamp)
       ("1"
         (:no N:flag 0)
@@ -316,9 +319,11 @@
         ("b5"
           (:yes N:flag 0)
           (:run N:manual (:step N:slider -1)))))))
+    ; Compositor
     ("C" (case stamp
       ("1" (:run (if(:toggle C:flag 1) C:on C:off)))
       ("3" (:toggle C:flag 3))))
+    ; snooZe
     ("Z" (case(last stamp)
       ("1" (:run (if(:toggle Z:flag 1) Z:on Z:off)))
       ("2"
@@ -338,6 +343,7 @@
           (-- Z:timecounter)
           (setq Z:tickcounter TICKLIMIT)
           (checktime))))))
+    ; Automate
     ("A" (case(last stamp)
       ("1" (:toggle A:flag 1))
       ("2" (when(post-outs)
@@ -347,6 +353,7 @@
       (true (case(first stamp)
         ("b" (:toggle A:flag 4))
         ("c" (:toggle A:flag 5))))))
+    ; eXtra
     ("X" (case stamp
       ("8" (setq flag true))
       ("postouts" (when(post-outs)
@@ -372,33 +379,33 @@
              (- (+ P:y P:height) height))))
       (:at P:cycle))))
 
-(define(check-wcwi prop , wp) (let(
+(define(check-wcwi prop) (let(
   class (lookup "class" prop)
   instance (lookup "instance" prop)
   )
-  (catch (:seek-tree ipc4cmd (fn(e)
+  (catch (:seek-tree ipc4cmd (fn(e , wp)
     (when(setq wp (lookup "window_properties" e))
       (when(and (= class (lookup "class" wp))
                 (!= instance (lookup "instance" wp)))))
         (throw true))))))
 
 (define(on-fullscreen bx)
-  (setq memo:memo bx)
+  (setq drawer bx)
   (when(:?? Z:flag 1) (let(
-    r (cons (lookup "fullscreen_mode" bx) Z:fullscreen_mode)
+    it (cons (lookup "fullscreen_mode" bx) Z:fullscreen_mode)
     )
     (cond
-      ((= '(1 0) r)
+      ((= '(1 0) it)
         (:run Z:off)
         (setq Z:fullscreen_mode 1))
-      ((= '(0 1) r)
+      ((= '(0 1) it)
         (:run Z:on)
         (setq Z:fullscreen_mode 0))))))
 
 (define(on-floating bx) (let (
   wtype (lookup "window_type" bx)
   )
-  (setq memo:memo bx)
+  (setq drawer bx)
   (if(or (= wtype "normal") (= wtype "unknown"))
     (:command-wid ipc4cmd (lookup "window" bx)
       (if(ends-with (lookup "floating" bx) "on")
@@ -435,10 +442,11 @@
     (when(ends-with (lookup "floating" vbox) "on")
       (:run xprop (lookup "window" vbox)))))
 
-(define(on-workspace-focus , rect) (let(
+(define(on-workspace-focus) (let(
   lst (json-parse (:getworkspaces ipc4cmd))
+  rect nil
   )
-  (setq memo:memo nil)
+  (setq drawer nil)
   (dolist (e lst rect)
     (when(= (lookup "focused" e) true)
       (setq rect (lookup "rect" e)
