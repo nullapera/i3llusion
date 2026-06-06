@@ -21,6 +21,8 @@
 
 (define(Cycle:index) (self .INDEX))
 
+(define(Cycle:length) (self .LENGTH))
+
 (define(at) ((self .LIST) (self .INDEX)))
 
 (define(at! newindex) (let(
