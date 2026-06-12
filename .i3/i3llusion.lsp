@@ -40,9 +40,8 @@
   scratcheds '()
   ipc4cmd (i3ipc i3sock)
   ipc4sub (i3ipc i3sock)
-  colors (Cycle (map
-    (fn(a) (join (cons "#" a)))
-    (permutations 3 '("a" "b" "e" "f"))))
+  colors (Cycle (map (fn(a) (join (cons "#" a)))
+                     (permutations 3 (explode "caf"))))
   basepath (append (real-path) "/i3llusion")
   memodat (append basepath "-memo.dat")
   conddat (append basepath "-cond.dat")
@@ -125,9 +124,10 @@
 
 (setq ; X: eXtra
   X:tick (lambda()
+    (:at! colors (rand (:length colors)))
     (dolist(e LETTERS) (letterfactory e))
     (letters2polybar))
-  X:tickcounter 0)
+  X:tickcounter TICKLIMIT)
 
 (constant
   'LETTERS (list M P N C Z A) 'TICKS (list N Z A X))
@@ -147,7 +147,7 @@
     true))
 
 (define(letterfactory lttr) (let(
-  color (:step colors -1)
+  color (:step colors 1)
   make (lambda(lt tx) (format lettersfmt lt lt lt lt lt color tx))
   )
   (cond
@@ -303,10 +303,10 @@
        (= '(nil true "user_off") it) (pop M:memo idx)
        (= '(nil nil "user_on") it) (push rec M:memo)))))
 
-(define(lettershop lttr stamp , flag)
+(define(lettershop lttr msg , flag)
   (case lttr
     ; Mode
-    ("M" (case stamp
+    ("M" (case msg
       ("4" (when(:?? M:flag 3)
         (:step M:cycle +1)
         (:set-from M:flag (:at M:cycle))))
@@ -314,15 +314,15 @@
         (:step M:cycle -1)
         (:set-from M:flag (:at M:cycle))))
       (true
-        (:toggle M:flag (int stamp))
+        (:toggle M:flag (int msg))
         (:set-to M:cycle (:nums M:flag)))))
     ; Position
     ("P" (if
-      (= (last stamp) "3") (:toggle P:flag 3)
-      (= stamp "b4") (:step P:cycle +1)
-      (= stamp "b5") (:step P:cycle -1)))
+      (= (last msg) "3") (:toggle P:flag 3)
+      (= msg "b4") (:step P:cycle +1)
+      (= msg "b5") (:step P:cycle -1)))
     ; Nightlight
-    ("N" (case(last stamp)
+    ("N" (case(last msg)
       ("1"
         (:no N:flag 0)
         (if(:toggle N:flag 1)
@@ -335,7 +335,7 @@
         (kelvinize)
         (:no N:flag 0)))
       ("3" (:toggle N:flag 3))
-      (true (case stamp
+      (true (case msg
         ("b4"
           (:yes N:flag 0)
           (:run N:manual (:step N:slider +1)))
@@ -343,18 +343,18 @@
           (:yes N:flag 0)
           (:run N:manual (:step N:slider -1)))))))
     ; Compositor
-    ("C" (case stamp
+    ("C" (case msg
       ("1" (:run (if(:toggle C:flag 1) C:on C:off)))
       ("3" (:toggle C:flag 3))))
     ; snooZe
-    ("Z" (case(last stamp)
+    ("Z" (case(last msg)
       ("1" (:run (if(:toggle Z:flag 1) Z:on Z:off)))
       ("2"
         (setq Z:timecounter Z:timelimit
               Z:tickcounter TICKLIMIT)
         (checktime))
       ("3" (:toggle Z:flag 3))
-      (true (case stamp
+      (true (case msg
         ("b4" (++ Z:timelimit))
         ("b5" (setq Z:timelimit (max (-- Z:timelimit) WARNLIMIT)))
         ("c4" (:step Z:cycle +1))
@@ -367,17 +367,17 @@
           (setq Z:tickcounter TICKLIMIT)
           (checktime))))))
     ; Automate
-    ("A" (case(last stamp)
+    ("A" (case(last msg)
       ("1" (:toggle A:flag 1))
       ("2" (when(post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
         (setq A:tickcounter TICKLIMIT)))
       ("3" (:toggle A:flag 3))
-      (true (case(first stamp)
+      (true (case(first msg)
         ("b" (:toggle A:flag 4))
         ("c" (:toggle A:flag 5))))))
     ; eXtra
-    ("X" (case stamp
+    ("X" (case msg
       ("8" (setq flag true))
       ("postouts" (when(post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
@@ -386,7 +386,7 @@
       ("polytoggle" (on-workspace-focus))
       ("automemo" (when(and (:?? A:flag 1) (:?? A:flag 5)) (toggle-memo)))
       ("togglememo" (toggle-memo))
-      (true (systemctl stamp)))))
+      (true (systemctl msg)))))
   flag)
 
 (define(go2position bx (lt1 0))
@@ -480,14 +480,16 @@
 ; main loop
 (local(flag data json lttr)
   (map delete '(include isinPATH permutations require))
-  (post-ins)
+  (seed (time-of-day))
   (:subscribe ipc4sub {[ "window", "workspace" ]})
+  (:run C:off)
+  (:run Z:off)
   (on-workspace-focus)
-  (if(:?? C:flag 1) (:run C:on) (:run C:off))
-  (if(:?? Z:flag 1) (:run Z:on) (:run Z:off))
+  (post-ins)
+  (X:tick)
   (N:tick)
-  (seed (time-of-day) true)
-  (:at! colors (rand (:length colors)))
+  (when(:?? C:flag 1) (:run C:on))
+  (when(:?? Z:flag 1) (:run Z:on))
   (remit)
   (until flag
     (until(net-select (:socket ipc4sub) "r" 25000)
