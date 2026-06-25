@@ -2,11 +2,11 @@
 ;;
 ;;  (require "Flag")
 ;;
-;;  (setq fl (Flag 8 '(0 1 nil true "" "!=0" () (()) ))) =>
+;;  (setq fl (Flag 8 '(0 1 nil true 0 1 nil true))) =>
 ;;    (Flag (0 1 0 1 0 1 0 1))
 ;;
-;;  (:@@ fl 1) => 1
-;;  (:?? fl 2) => nil
+;;  (:on? fl 2) => nil
+;;  (:off? fl 2) => true
 ;;  (:toggle fl 3) => nil
 ;;  (:nums fl) => (0 1 0 0 0 1 0 1)
 ;;  (:nums fl -2) => (0 1)
@@ -15,30 +15,31 @@
 ;;
 (context 'Flag)
 
-(constant 'NT '(nil true) '.FLAGS 1)
+(constant
+  'NT '(nil true) 'TN '(true nil) 'OZ '(1 0) 'ZOSTR '("0" "1") '.FLAGS 1)
 
 (define(Flag:Flag nsize lst)
   (let(obj (list (context) (dup 0 nsize)))
     (when lst (:set-from obj lst))
     obj))
 
-(define(@@ idx) (self .FLAGS idx))
-
-(define(?? idx) (NT (self .FLAGS idx)))
-
-(define(yes idx)
+(define(on idx)
   (setf (self .FLAGS idx) 1)
   true)
 
-(define(no idx)
+(define(off idx)
   (setf (self .FLAGS idx) 0)
   nil)
 
-(define(flag idx value)
-  (setf (self .FLAGS idx) (if(or (null? value) (= value "0")) 0 1)))
-
 (define(toggle idx)
-  (NT (setf (self .FLAGS idx) ('(1 0) $it))))
+  (NT (setf (self .FLAGS idx) (OZ $it))))
+
+(define(on? idx) (NT (self .FLAGS idx)))
+
+(define(off? idx) (TN (self .FLAGS idx)))
+
+(define(flag idx value)
+  (setf (self .FLAGS idx) (if(or (= value 1) (= value true)) 1 0)))
 
 (define(set-from lst) (dolist(e lst) (flag $idx e)))
 
@@ -49,5 +50,5 @@
      (a0 a1 (self .FLAGS))))
 
 (define(to-int a0 a1)
-  (let(lst (select '("0" "1") (nums a0 a1)))
+  (let(lst (select ZOSTR (nums a0 a1)))
     (int (join lst) 0 2)))
