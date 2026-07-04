@@ -68,7 +68,7 @@
   M:flag (Flag 4 '(0 1 1))
   M:cycle (Cycle '((0 0 0 1) (0 0 1 1) (0 1 0 1) (0 1 1 1)))
   M:memo '()
-  M:txt ""
+  M:msg ""
   M:texts '(
     "m" "Mode: UnFloating"
     "m+" "Mode: UnFloatingMemo"
@@ -80,7 +80,7 @@
   P:cycle (Cycle '("center" "mouse" "upside"))
   P:wrkspc_y 0
   P:wrkspc_height 0
-  P:txt "")
+  P:msg "")
 
 (setq ; N: Nightlight
   N:flag (Flag 4 '(0 1))
@@ -90,7 +90,7 @@
   N:slider (Slider 6400 2400 6400 50)
   N:tick (lambda() (when(and (:on? N:flag 1) (:off? N:flag 0)) (kelvinize)))
   N:tickcounter TICKLIMIT
-  N:txt ""
+  N:msg ""
   N:texts '(
     "n" "Nightlight: Off"
     "N" "Nightlight:"
@@ -101,7 +101,7 @@
   C:flag (Flag 4 '(0 1))
   C:on (Cmd {picom} "-b --config" (append basepath "-picom.conf"))
   C:off (Cmd {pkill} "picom")
-  C:txt ""
+  C:msg ""
   C:texts '("c" "Compositor: Off" "C" "Compositor: On"))
 
 (setq ; Z: snooZe
@@ -115,13 +115,13 @@
   Z:fullscreen_mode 0
   Z:timelimit 80
   Z:timecounter Z:timelimit
-  Z:txt "")
+  Z:msg "")
 
 (setq ; A: Automate
   A:flag (Flag 6 '(0 1 0 0 1 1))
   A:tickcounter TICKLIMIT
   A:tick (lambda() (when(and (:on? A:flag 1) (:on? A:flag 4)) (post-outs)))
-  A:txt ""
+  A:msg ""
   A:texts '("a" "a" "a" "a" "Asm" "AsM" "ASm" "ASM"))
 
 (setq ; X: eXtra
@@ -154,46 +154,46 @@
   )
   (cond
     ((or (= lttr "M") (= lttr M))
-      (setq M:txt (make "M" (M:texts (:to-int M:flag 1 3))))
+      (setq M:msg (make "M" (M:texts (:to-int M:flag 1 3))))
       true)
     ((or (= lttr "P") (= lttr P))
-      (setq P:txt (make "Pa" (if(:on? P:flag 3)
+      (setq P:msg (make "Pa" (if(:on? P:flag 3)
                                 "Position:"
                                 (append "P" (first (:at P:cycle))))))
-      (when(:on? P:flag 3) (extend P:txt (make "Pb" (:at P:cycle))))
+      (when(:on? P:flag 3) (extend P:msg (make "Pb" (:at P:cycle))))
       true)
     ((or (= lttr "N") (= lttr N))
-      (setq N:txt (make "Na" (N:texts (:to-int N:flag '(0 1 3)))))
+      (setq N:msg (make "Na" (N:texts (:to-int N:flag '(0 1 3)))))
       (when(and (:on? N:flag 3) (:on? N:flag 1))
-        (extend N:txt (make "Nb" (string (:value N:slider) "K"))))
+        (extend N:msg (make "Nb" (string (:value N:slider) "K"))))
       true)
     ((or (= lttr "C") (= lttr C))
-      (setq C:txt (make "C" (C:texts (:to-int C:flag '(1 3)))))
+      (setq C:msg (make "C" (C:texts (:to-int C:flag '(1 3)))))
       true)
     ((or (= lttr "Z") (= lttr Z))
       (if(:on? Z:flag 3)
         (begin
-          (setq Z:txt
+          (setq Z:msg
             (make "Za" (if(:on? Z:flag 1) "snooZe: lock" "snooZe: UNlock")))
-          (extend Z:txt
+          (extend Z:msg
             (make "Zb" (format {<  %.1fhrs} (div Z:timelimit 10)))
             (make "Zc" (append "<  " (:at Z:cycle)))))
-        (setq Z:txt (make "Zd" (format (if(:on? Z:flag 1) {Z%.1f} {z%.1f})
+        (setq Z:msg (make "Zd" (format (if(:on? Z:flag 1) {Z%.1f} {z%.1f})
                                        (div Z:timecounter 10)))))
       true)
     ((or (= lttr "A") (= lttr A))
       (if(:on? A:flag 3)
         (begin
-          (setq A:txt (make "Aa" (if(:on? A:flag 1) "Auto:" "Auto: Off")))
+          (setq A:msg (make "Aa" (if(:on? A:flag 1) "Auto:" "Auto: Off")))
           (when(:on? A:flag 1)
-            (extend A:txt (make "Ab" (if(:on? A:flag 4) "SavE," "save,"))
+            (extend A:msg (make "Ab" (if(:on? A:flag 4) "SavE," "save,"))
                           (make "Ac" (if(:on? A:flag 5) "MemO" "memo")))))
-        (setq A:txt (make "Aa" (A:texts (:to-int A:flag '(1 4 5))))))
+        (setq A:msg (make "Aa" (A:texts (:to-int A:flag '(1 4 5))))))
       true)
     (true nil))))
 
 (define(letters2polybar) (let(
-  lst (map (fn(a) a:txt) LETTERS)
+  lst (map (fn(a) a:msg) LETTERS)
   )
   (write-line 1 (join lst))))
 
