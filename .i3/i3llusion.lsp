@@ -40,10 +40,12 @@
   scratcheds '()
   ipc4cmd (i3ipc i3sock)
   ipc4sub (i3ipc i3sock)
-  colors (begin
+  colors (let(
+    lst (map (fn(a) (join (cons "#" a)))
+             (permutations 3 (explode "d9bf")))
+    )
     (seed (time-of-day))
-    (Cycle (randomize (map (fn(a) (join (cons "#" a)))
-                           (permutations 3 (explode "8caf"))))))
+    (Cycle (randomize lst)))
   basepath (append (real-path) "/i3llusion")
   memodat (append basepath "-memo.dat")
   conddat (append basepath "-cond.dat")
@@ -53,11 +55,11 @@
 
 (let(p (append basepath "-msg.lsp"))
   (setq lettersfmt (append
-    "%%{A1:" p " %s1:}"
-    "%%{A2:" p " %s2:}"
-    "%%{A3:" p " %s3:}"
-    "%%{A4:" p " %s4:}"
-    "%%{A5:" p " %s5:}"
+    "%%{A1:" p " %s_1:}"
+    "%%{A2:" p " %s_2:}"
+    "%%{A3:" p " %s_3:}"
+    "%%{A4:" p " %s_4:}"
+    "%%{A5:" p " %s_5:}"
     "%%{F%s} %s "
     "%%{A}%%{A}%%{A}%%{A}%%{A}")))
 
@@ -157,15 +159,15 @@
       (setq M:msg (make "M" (M:texts (:to-int M:flag 1 3))))
       true)
     ((or (= lttr "P") (= lttr P))
-      (setq P:msg (make "Pa" (if(:on? P:flag 3)
+      (setq P:msg (make "P_a" (if(:on? P:flag 3)
                                 "Position:"
                                 (append "P" (first (:at P:cycle))))))
-      (when(:on? P:flag 3) (extend P:msg (make "Pb" (:at P:cycle))))
+      (when(:on? P:flag 3) (extend P:msg (make "P_b" (:at P:cycle))))
       true)
     ((or (= lttr "N") (= lttr N))
-      (setq N:msg (make "Na" (N:texts (:to-int N:flag '(0 1 3)))))
+      (setq N:msg (make "N_a" (N:texts (:to-int N:flag '(0 1 3)))))
       (when(and (:on? N:flag 3) (:on? N:flag 1))
-        (extend N:msg (make "Nb" (string (:value N:slider) "K"))))
+        (extend N:msg (make "N_b" (string (:value N:slider) "K"))))
       true)
     ((or (= lttr "C") (= lttr C))
       (setq C:msg (make "C" (C:texts (:to-int C:flag '(1 3)))))
@@ -174,21 +176,21 @@
       (if(:on? Z:flag 3)
         (begin
           (setq Z:msg
-            (make "Za" (if(:on? Z:flag 1) "snooZe: lock" "snooZe: UNlock")))
+            (make "Z_a" (if(:on? Z:flag 1) "snooZe: lock" "snooZe: UNlock")))
           (extend Z:msg
-            (make "Zb" (format {<  %.1fhrs} (div Z:timelimit 10)))
-            (make "Zc" (append "<  " (:at Z:cycle)))))
-        (setq Z:msg (make "Zd" (format (if(:on? Z:flag 1) {Z%.1f} {z%.1f})
-                                       (div Z:timecounter 10)))))
+            (make "Z_b" (format {<  %.1fhrs} (div Z:timelimit 10)))
+            (make "Z_c" (append "<  " (:at Z:cycle)))))
+        (setq Z:msg (make "Z_d" (format (if(:on? Z:flag 1) {Z%.1f} {z%.1f})
+                                        (div Z:timecounter 10)))))
       true)
     ((or (= lttr "A") (= lttr A))
       (if(:on? A:flag 3)
         (begin
-          (setq A:msg (make "Aa" (if(:on? A:flag 1) "Auto:" "Auto: Off")))
+          (setq A:msg (make "A_a" (if(:on? A:flag 1) "Auto:" "Auto: Off")))
           (when(:on? A:flag 1)
-            (extend A:msg (make "Ab" (if(:on? A:flag 4) "SavE," "save,"))
-                          (make "Ac" (if(:on? A:flag 5) "MemO" "memo")))))
-        (setq A:msg (make "Aa" (A:texts (:to-int A:flag '(1 4 5))))))
+            (extend A:msg (make "A_b" (if(:on? A:flag 4) "SavE," "save,"))
+                          (make "A_c" (if(:on? A:flag 5) "MemO" "memo")))))
+        (setq A:msg (make "A_a" (A:texts (:to-int A:flag '(1 4 5))))))
       true)
     (true nil))))
 
@@ -262,35 +264,26 @@
       (:run notify {critical}
         (append "'post-ins: Can not read from " conddat "!'")))))
 
-(define(propeller) (let(
+(define(propeller flag , fcsd it) (let(
   lst '()
-  fcsd nil
   )
   (:seek-tree ipc4cmd (fn(e)
     (unless(= (lookup "scratchpad_state" e) "none")
       (push (lookup "window" (first (lookup "nodes" e))) lst -1))
     (when(= (lookup "focused" e) true) (setq fcsd e))))
-  (when lst (let(
-    fwid (when fcsd (lookup "window" fcsd))
-    )
+  (when lst (let(fwid (when fcsd (lookup "window" fcsd)))
     (if(number? fwid)
-      (let(ffon (ends-with (lookup "floating" fcsd) "on")
-           it nil)
-        (setq lst (replace fwid lst))
-        (when lst
-          (setq scratcheds (difference scratcheds (difference scratcheds lst))
-                it (difference lst scratcheds))
-          (if it
-            (setq it (first it))
-            (setq it (first lst)
-                  scratcheds '()))
-          (push fwid scratcheds -1)
-          (:command-wid ipc4cmd fwid (string "swap container with id " it))
-          (:command-wid ipc4cmd it
-            (if ffon
-              "border pixel 6, floating enable"
-              "border none, floating disable"))
-          (when ffon (:run xprop it))))
+      (let(ffon (ends-with (lookup "floating" fcsd) "on"))
+        (setq scratcheds (or (difference $it (difference $it lst)) lst))
+        (setq it (if flag
+                    (pop (push fwid scratcheds -1))
+                    (pop (push fwid scratcheds) -1)))
+        (:command-wid ipc4cmd fwid (string "swap container with id " it))
+        (:command-wid ipc4cmd it
+          (if ffon
+            "border pixel 6, floating enable"
+            "border none, floating disable"))
+        (when ffon (:run xprop it)))
       (:command ipc4cmd "scratchpad show"))))))
 
 (define(toggle-memo)
@@ -308,7 +301,7 @@
 (define(lettershop lttr msg , flag)
   (case lttr
     ; Mode
-    ("M" (case msg
+    ("M" (case(first msg)
       ("4" (when(:on? M:flag 3)
         (:step M:cycle +1)
         (:set-from M:flag (:at M:cycle))))
@@ -316,13 +309,13 @@
         (:step M:cycle -1)
         (:set-from M:flag (:at M:cycle))))
       (true
-        (:toggle M:flag (int msg))
+        (:toggle M:flag (int (first msg)))
         (:set-to M:cycle (:nums M:flag)))))
     ; Position
     ("P" (if
       (= (last msg) "3") (:toggle P:flag 3)
-      (= msg "b4") (:step P:cycle +1)
-      (= msg "b5") (:step P:cycle -1)))
+      (= '("b" "4") msg) (:step P:cycle +1)
+      (= '("b" "5") msg) (:step P:cycle -1)))
     ; Nightlight
     ("N" (case(last msg)
       ("1"
@@ -337,15 +330,16 @@
         (kelvinize)
         (:off N:flag 0)))
       ("3" (:toggle N:flag 3))
-      (true (case msg
-        ("b4"
-          (:on N:flag 0)
-          (:run N:manual (:step N:slider +1)))
-        ("b5"
-          (:on N:flag 0)
-          (:run N:manual (:step N:slider -1)))))))
+      (true (when(= (first msg) "b")
+        (case(last msg)
+          ("4"
+            (:on N:flag 0)
+            (:run N:manual (:step N:slider +1)))
+          ("5"
+            (:on N:flag 0)
+            (:run N:manual (:step N:slider -1))))))))
     ; Compositor
-    ("C" (case msg
+    ("C" (case(first msg)
       ("1" (:run (if(:toggle C:flag 1) C:on C:off)))
       ("3" (:toggle C:flag 3))))
     ; snooZe
@@ -356,18 +350,21 @@
               Z:tickcounter TICKLIMIT)
         (checktime))
       ("3" (:toggle Z:flag 3))
-      (true (case msg
-        ("b4" (++ Z:timelimit))
-        ("b5" (setq Z:timelimit (max (-- Z:timelimit) WARNLIMIT)))
-        ("c4" (:step Z:cycle +1))
-        ("c5" (:step Z:cycle -1))
-        ("d4"
-          (++ Z:timecounter)
-          (setq Z:tickcounter TICKLIMIT))
-        ("d5"
-          (-- Z:timecounter)
-          (setq Z:tickcounter TICKLIMIT)
-          (checktime))))))
+      (true (case(first msg)
+        ("b" (if(= (last msg) "4")
+          (++ Z:timelimit)
+          (setq Z:timelimit (max (- $it 1) WARNLIMIT))))
+        ("c" (if(= (last msg) "4")
+          (:step Z:cycle +1)
+          (:step Z:cycle -1)))
+        ("d" (case(last msg)
+          ("4"
+            (++ Z:timecounter)
+            (setq Z:tickcounter TICKLIMIT))
+          ("5"
+            (-- Z:timecounter)
+            (setq Z:tickcounter TICKLIMIT)
+            (checktime))))))))
     ; Automate
     ("A" (case(last msg)
       ("1" (:toggle A:flag 1))
@@ -379,16 +376,17 @@
         ("b" (:toggle A:flag 4))
         ("c" (:toggle A:flag 5))))))
     ; eXtra
-    ("X" (case msg
+    ("X" (case(first msg)
       ("8" (setq flag true))
       ("postouts" (when(post-outs)
         (:run notify {normal} "'post-outs: saved by user request!'")
         (setq A:tickcounter TICKLIMIT)))
       ("propeller" (propeller))
+      ("propellerR" (propeller true))
       ("polytoggle" (on-workspace-focus))
       ("automemo" (when(and (:on? A:flag 1) (:on? A:flag 5)) (toggle-memo)))
       ("togglememo" (toggle-memo))
-      (true (systemctl msg)))))
+      (true (systemctl (first msg))))))
   flag)
 
 (define(go2position bx (lt1 0))
@@ -493,11 +491,12 @@
   (when(:on? Z:flag 1) (:run Z:on))
   (remit)
   (until flag
-    (until(net-select (:socket ipc4sub) "r" 25000)
+    (until(net-select (:socket ipc4sub) "r" 35000)
       (dolist(childpid (receive))
         (receive childpid data)
         (when(= childpid polybarpid)
-          (setq lttr (pop data)
+          (setq data (parse $it "_")
+                lttr (pop data)
                 flag (lettershop lttr data))
           (when(letterfactory lttr) (letters2polybar)))))
     (setq json (json-parse (:receive ipc4sub)))
