@@ -19,7 +19,7 @@
   'NT '(nil true) 'TN '(true nil) 'OZ '(1 0) 'ZOSTR '("0" "1") '.FLAGS 1)
 
 (define(Flag:Flag nsize lst)
-  (let(obj (list (context) (dup 0 nsize)))
+  (let (obj (list (context) (dup 0 nsize)))
     (when lst (:set-from obj lst))
     obj))
 
@@ -44,11 +44,11 @@
 (define(set-from lst) (dolist(e lst) (flag $idx e)))
 
 (define(nums a0 a1)
-  (if(nil? a0) (self .FLAGS)
-     (list? a0) (select (self .FLAGS) a0)
-     (nil? a1) (a0 (self .FLAGS))
-     (a0 a1 (self .FLAGS))))
+  (if (nil? a0) (self .FLAGS)
+      (list? a0) (select (self .FLAGS) a0)
+      (nil? a1) (a0 (self .FLAGS))
+      (a0 a1 (self .FLAGS))))
 
 (define(to-int a0 a1)
-  (let(lst (select ZOSTR (nums a0 a1)))
+  (let (lst (select ZOSTR (nums a0 a1)))
     (int (join lst) 0 2)))

@@ -7,13 +7,12 @@
 ;;
 (context 'chunk-by)
 
-(define(chunk-by:chunk-by func lst) (let(
-  rslt '()
-  key nil
-  )
-  (dolist(e lst)
+(define(chunk-by:chunk-by func lst)
+  (let (rslt '()
+        key nil)
+  (dolist (e lst)
     (setq key (func e))
-    (if(lookup key rslt)
+    (if (lookup key rslt)
       (push e (lookup key rslt) -1)
       (push (list key (list e)) rslt -1)))
   rslt))
