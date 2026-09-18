@@ -11,11 +11,11 @@
 (define(isinPATH:isinPATH)
   (let (flag nil
         missing '())
-  (doargs (e)
-    (if (= e true)
-      (setq flag true)
-      (unless (real-path e true) (push e missing -1))))
-  (when (and flag (true? missing))
-    (throw-error
-      (append "Non-existing file(s) in PATH! : '" (string missing) "'")))
-  (empty? missing)))
+    (doargs (e)
+      (if (= e true)
+        (setq flag true)
+        (unless (real-path e true) (push e missing -1))))
+    (when (and flag (true? missing))
+      (throw-error
+        (append "Non-existing file(s) in PATH! : '" (string missing) "'")))
+    (empty? missing)))

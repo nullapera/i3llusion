@@ -324,7 +324,7 @@
             (setq N:tickcounter TICKLIMIT)
             (kelvinize))
           (:run N:off)))
-      ("2" (when(:on? N:flag 0)
+      ("2" (when (:on? N:flag 0)
         (setq N:tickcounter TICKLIMIT)
         (kelvinize)
         (:off N:flag 0)))
@@ -371,7 +371,7 @@
         (:run notify {normal} "'post-outs: saved by user request!'")
         (setq A:tickcounter TICKLIMIT)))
       ("3" (:toggle A:flag 3))
-      (true (cas e(first msg)
+      (true (case (first msg)
         ("b" (:toggle A:flag 4))
         ("c" (:toggle A:flag 5))))))
     ; eXtra
@@ -413,7 +413,7 @@
 
 (define(on-fullscreen bx)
   (setq drawer bx)
-  (when(:on? Z:flag 1)
+  (when (:on? Z:flag 1)
     (let (it (cons (lookup "fullscreen_mode" bx) Z:fullscreen_mode))
       (cond
         ((= '(1 0) it)

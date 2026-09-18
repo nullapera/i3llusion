@@ -12,7 +12,7 @@
 (context 'basename)
 
 (define(basename:basename path (xext "") isext (rxo 0))
-  (letn( obs (if (find path '("." ".." "/" "")) ""
+  (letn (obs (if (find path '("." ".." "/" "")) ""
                 (regex {([^/]*)\z} path) $1
                 "")
          bs obs)
