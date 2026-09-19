@@ -14,7 +14,7 @@
   'GET_TREE 4)
 
 (define(i3ipc:i3ipc path)
-  (if(net-connect path)
+  (if (net-connect path)
     (list (context) $it)
     (throw-error (string (context) " => No connection to: '" path "'"))))
 
@@ -47,13 +47,12 @@
 
 (define(gettree) (chat GET_TREE ""))
 
-(define(seek-tree func) (letn(
-  json (json-parse (gettree))
-  lst (append (lookup "nodes" json) (lookup "floating_nodes" json))
-  it (pop lst)
-  )
-  (while it
-    (unless(= (lookup "layout" it) "dockarea")
-      (func it)
-      (extend lst (lookup "nodes" it) (lookup "floating_nodes" it)))
-    (setq it (pop lst)))))
+(define(seek-tree func)
+  (letn (json (json-parse (gettree))
+         lst (append (lookup "nodes" json) (lookup "floating_nodes" json))
+         it (pop lst))
+    (while it
+      (unless (= (lookup "layout" it) "dockarea")
+        (func it)
+        (extend lst (lookup "nodes" it) (lookup "floating_nodes" it)))
+      (setq it (pop lst)))))

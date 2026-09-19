@@ -29,7 +29,7 @@
       (throw-error (append "Can not be deleted! : '" POLYBARSOCK "'")))))
 
 (require
-  "Flag" "Cmd" "Cycle" "Slider" "permutations" "i3llusion/i3ipc")
+  "Flag" "Cmd" "Cycle" "Slider" "chunk-by" "permutations" "i3llusion/i3ipc")
 
 (constant
   'BASEPATH (append (real-path) "/i3llusion")
@@ -55,10 +55,14 @@
   scratcheds '()
   ipc4cmd (i3ipc I3SOCK)
   ipc4sub (i3ipc I3SOCK)
-  colors (let (lst (map (fn (a) (join (cons "#" a)))
-                        (permutations 3 (explode "d9bf"))))
+  colors (let (lst (explode "d9bf")
+               rslt nil)
     (seed (time-of-day))
-    (Cycle (dotimes (_ 3) (setq lst (randomize $it)))))
+    (setq rslt (permutations 3 lst)
+          rslt (chunk-by (fn(a) (find (first a) lst)) $it)
+          rslt (map (fn(a) (randomize (last a))) $it)
+          rslt (eval (cons 'map (cons 'list (map quote $it)))))
+    (Cycle (map (fn(a) (join (cons "#" a))) (flat rslt 1))))
   notify (Cmd {notify-send} "-u" "'** i3llusion **'")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
@@ -173,11 +177,11 @@
       (if (:on? Z:flag 3)
         (begin
           (setq Z:msg
-            (make "Z_a" (if(:on? Z:flag 1) "snooZe: lock" "snooZe: UNlock")))
+            (make "Z_a" (if (:on? Z:flag 1) "snooZe: lock" "snooZe: UNlock")))
           (extend Z:msg
             (make "Z_b" (format {<  %.1fhrs} (div Z:timelimit 10)))
             (make "Z_c" (append "<  " (:at Z:cycle)))))
-        (setq Z:msg (make "Z_d" (format (if(:on? Z:flag 1) {Z%.1f} {z%.1f})
+        (setq Z:msg (make "Z_d" (format (if (:on? Z:flag 1) {Z%.1f} {z%.1f})
                                         (div Z:timecounter 10)))))
       true)
     ((or (= lttr "A") (= lttr A))
@@ -185,8 +189,9 @@
         (begin
           (setq A:msg (make "A_a" (if(:on? A:flag 1) "Auto:" "Auto: Off")))
           (when (:on? A:flag 1)
-            (extend A:msg (make "A_b" (if(:on? A:flag 4) "SavE," "save,"))
-                          (make "A_c" (if(:on? A:flag 5) "MemO" "memo")))))
+            (extend A:msg
+              (make "A_b" (if(:on? A:flag 4) "SavE," "save,"))
+              (make "A_c" (if(:on? A:flag 5) "MemO" "memo")))))
         (setq A:msg (make "A_a" (A:texts (:to-int A:flag '(1 4 5))))))
       true)
     (true nil))))
@@ -225,21 +230,18 @@
 
 (define(post-outs)
   (let (lst (append
-    (map (fn(a) (:nums a:flag)) LETTERS)
-         (list (:index P:cycle)
-               (:value N:slider)
-               Z:timelimit
-               (:index Z:cycle)))
-  )
-  (apply and (list
-    (unless (write-file MEMOPATH (string M:memo))
-      (:run notify {critical}
-        (append "'post-outs: Can not write to " MEMOPATH "!'"))
-      nil)
-    (unless (write-file CONDPATH (join (map string lst) "\n"))
-      (:run notify {critical}
-        (append "'post-outs: Can not write to " CONDPATH "!'"))
-      nil)))))
+              (map (fn(a) (:nums a:flag)) LETTERS)
+                   (list (:index P:cycle) (:value N:slider)
+                         Z:timelimit (:index Z:cycle))))
+    (apply and (list
+      (unless (write-file MEMOPATH (string M:memo))
+        (:run notify {critical}
+          (append "'post-outs: Can not write to " MEMOPATH "!'"))
+        nil)
+      (unless (write-file CONDPATH (join (map string lst) "\n"))
+        (:run notify {critical}
+          (append "'post-outs: Can not write to " CONDPATH "!'"))
+        nil)))))
 
 (define(post-ins)
   (when (file? MEMOPATH)
@@ -272,9 +274,10 @@
       (if (number? fwid)
         (let (ffon (ends-with (lookup "floating" fcsd) "on"))
           (setq scratcheds (or (difference $it (difference $it lst)) lst))
-          (setq it (if flag
-                      (pop (push fwid scratcheds -1))
-                      (pop (push fwid scratcheds) -1)))
+          (setq it
+            (if flag
+              (pop (push fwid scratcheds -1))
+              (pop (push fwid scratcheds) -1)))
           (:command-wid ipc4cmd fwid (string "swap container with id " it))
           (:command-wid ipc4cmd it
             (if ffon
@@ -290,53 +293,47 @@
                      (lookup "instance" prop)
                      (:on? M:flag 1))
            idx (find rec M:memo)
-           it (list (:on? M:flag 1) (number? idx) (lookup "floating" drawer))
-    )
-    (if (= '(true true "user_on") it) (pop M:memo idx)
-        (= '(true nil "user_off") it) (push rec M:memo)
-        (= '(nil true "user_off") it) (pop M:memo idx)
-        (= '(nil nil "user_on") it) (push rec M:memo)))))
+           it (list (:on? M:flag 1) (number? idx) (lookup "floating" drawer)))
+      (if (= '(true true "user_on") it) (pop M:memo idx)
+          (= '(true nil "user_off") it) (push rec M:memo)
+          (= '(nil true "user_off") it) (pop M:memo idx)
+          (= '(nil nil "user_on") it) (push rec M:memo)))))
 
 (define(lettershop lttr msg , flag)
   (case lttr
     ; Mode
     ("M" (case (first msg)
       ("4" (when (:on? M:flag 3)
-        (:step M:cycle +1)
-        (:set-from M:flag (:at M:cycle))))
+              (:step M:cycle +1)
+              (:set-from M:flag (:at M:cycle))))
       ("5" (when (:on? M:flag 3)
-        (:step M:cycle -1)
-        (:set-from M:flag (:at M:cycle))))
-      (true
-        (:toggle M:flag (int (first msg)))
-        (:set-to M:cycle (:nums M:flag)))))
+              (:step M:cycle -1)
+              (:set-from M:flag (:at M:cycle))))
+      (true (:toggle M:flag (int (first msg)))
+            (:set-to M:cycle (:nums M:flag)))))
     ; Position
-    ("P" (if
-      (= (last msg) "3") (:toggle P:flag 3)
-      (= '("b" "4") msg) (:step P:cycle +1)
-      (= '("b" "5") msg) (:step P:cycle -1)))
+    ("P" (if (= (last msg) "3") (:toggle P:flag 3)
+             (= '("b" "4") msg) (:step P:cycle +1)
+             (= '("b" "5") msg) (:step P:cycle -1)))
     ; Nightlight
     ("N" (case (last msg)
-      ("1"
-        (:off N:flag 0)
-        (if (:toggle N:flag 1)
-          (begin
-            (setq N:tickcounter TICKLIMIT)
-            (kelvinize))
-          (:run N:off)))
+      ("1" (:off N:flag 0)
+           (if (:toggle N:flag 1)
+              (begin
+                (setq N:tickcounter TICKLIMIT)
+                (kelvinize))
+              (:run N:off)))
       ("2" (when (:on? N:flag 0)
-        (setq N:tickcounter TICKLIMIT)
-        (kelvinize)
-        (:off N:flag 0)))
+              (setq N:tickcounter TICKLIMIT)
+              (kelvinize)
+              (:off N:flag 0)))
       ("3" (:toggle N:flag 3))
       (true (when (= (first msg) "b")
         (case (last msg)
-          ("4"
-            (:on N:flag 0)
-            (:run N:manual (:step N:slider +1)))
-          ("5"
-            (:on N:flag 0)
-            (:run N:manual (:step N:slider -1))))))))
+          ("4" (:on N:flag 0)
+               (:run N:manual (:step N:slider +1)))
+          ("5" (:on N:flag 0)
+               (:run N:manual (:step N:slider -1))))))))
     ; Compositor
     ("C" (case (first msg)
       ("1" (:run (if(:toggle C:flag 1) C:on C:off)))
@@ -344,47 +341,45 @@
     ; snooZe
     ("Z" (case (last msg)
       ("1" (:run (if (:toggle Z:flag 1) Z:on Z:off)))
-      ("2"
-        (setq Z:timecounter Z:timelimit
-              Z:tickcounter TICKLIMIT)
-        (checktime))
+      ("2" (setq Z:timecounter Z:timelimit
+                 Z:tickcounter TICKLIMIT)
+           (checktime))
       ("3" (:toggle Z:flag 3))
       (true (case (first msg)
         ("b" (if (= (last msg) "4")
-          (++ Z:timelimit)
-          (setq Z:timelimit (max (- $it 1) WARNLIMIT))))
+                (++ Z:timelimit)
+                (setq Z:timelimit (max (- $it 1) WARNLIMIT))))
         ("c" (if (= (last msg) "4")
-          (:step Z:cycle +1)
-          (:step Z:cycle -1)))
+                (:step Z:cycle +1)
+                (:step Z:cycle -1)))
         ("d" (case (last msg)
-          ("4"
-            (++ Z:timecounter)
-            (setq Z:tickcounter TICKLIMIT))
-          ("5"
-            (-- Z:timecounter)
-            (setq Z:tickcounter TICKLIMIT)
-            (checktime))))))))
+          ("4" (++ Z:timecounter)
+               (setq Z:tickcounter TICKLIMIT))
+          ("5" (-- Z:timecounter)
+               (setq Z:tickcounter TICKLIMIT)
+               (checktime))))))))
     ; Automate
     ("A" (case (last msg)
       ("1" (:toggle A:flag 1))
       ("2" (when (post-outs)
-        (:run notify {normal} "'post-outs: saved by user request!'")
-        (setq A:tickcounter TICKLIMIT)))
+              (:run notify {normal} "'post-outs: saved by user request!'")
+              (setq A:tickcounter TICKLIMIT)))
       ("3" (:toggle A:flag 3))
       (true (case (first msg)
         ("b" (:toggle A:flag 4))
         ("c" (:toggle A:flag 5))))))
     ; eXtra
     ("X" (case (first msg)
-      ("8" (setq flag true))
-      ("postouts" (when (post-outs)
-        (:run notify {normal} "'post-outs: saved by user request!'")
-        (setq A:tickcounter TICKLIMIT)))
-      ("propeller" (propeller))
-      ("propellerR" (propeller true))
-      ("polytoggle" (on-workspace-focus))
       ("automemo" (when (and (:on? A:flag 1) (:on? A:flag 5)) (toggle-memo)))
       ("togglememo" (toggle-memo))
+      ("propeller" (propeller))
+      ("propellerR" (propeller true))
+      ("postouts" (when (post-outs)
+                    (:run notify {normal}
+                      "'post-outs: saved by user request!'")
+                    (setq A:tickcounter TICKLIMIT)))
+      ("polytoggle" (on-workspace-focus))
+      ("8" (setq flag true))
       (true (systemctl (first msg))))))
   flag)
 
@@ -403,8 +398,7 @@
 
 (define(check-wcwi wprop)
   (let (wc (lookup "class" wprop)
-      wi (lookup "instance" wprop)
-  )
+        wi (lookup "instance" wprop))
   (catch (:seek-tree ipc4cmd (fn(e , wp)
     (when (setq wp (lookup "window_properties" e))
       (when (and (= wc (lookup "class" wp))
@@ -415,13 +409,12 @@
   (setq drawer bx)
   (when (:on? Z:flag 1)
     (let (it (cons (lookup "fullscreen_mode" bx) Z:fullscreen_mode))
-      (cond
-        ((= '(1 0) it)
-          (:run Z:off)
-          (setq Z:fullscreen_mode 1))
-        ((= '(0 1) it)
-          (:run Z:on)
-          (setq Z:fullscreen_mode 0))))))
+      (cond ((= '(1 0) it)
+              (:run Z:off)
+              (setq Z:fullscreen_mode 1))
+            ((= '(0 1) it)
+              (:run Z:on)
+              (setq Z:fullscreen_mode 0))))))
 
 (define(on-floating bx)
   (let (wtype (lookup "window_type" bx))
@@ -432,7 +425,7 @@
           (append "border pixel 6, " (go2position bx))
           "border none"))
       (when (and (= (:at P:cycle) "upside")
-                (ends-with (lookup "floating" bx) "on"))
+                 (ends-with (lookup "floating" bx) "on"))
         (:command-wid ipc4cmd (lookup "window" bx) (go2position bx 0.1))))))
 
 (define(on-new bx)
@@ -442,7 +435,7 @@
            idx (find (list (lookup "class" prop)
                      (lookup "instance" prop)
                      (:on? M:flag 1))
-               M:memo)
+                     M:memo)
            rec (list (:on? M:flag 1) (:on? M:flag 2) (number? idx)))
       (if (= '(true true true) rec)
           (:command-wid ipc4cmd (lookup "window" bx) "floating disable")
@@ -472,7 +465,7 @@
 
 ; main loop
 (local (flag data json lttr)
-  (map delete '(include isinPATH permutations require))
+  (map delete '(chunk-by include isinPATH permutations require))
   (:subscribe ipc4sub {[ "window", "workspace" ]})
   (:run C:off)
   (:run Z:off)

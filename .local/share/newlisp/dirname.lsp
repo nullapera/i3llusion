@@ -12,4 +12,4 @@
                  (regex {\A(.+)/([^/]*)\z} path) (list $1 $2)
                  (= (first path) "/") (list (pop path) path)
                  '("." "")))
-  (if isbase rslt (first rslt))))
+    (if isbase rslt (first rslt))))
