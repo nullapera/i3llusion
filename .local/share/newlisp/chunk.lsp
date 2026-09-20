@@ -1,13 +1,13 @@
 ;; vim:ts=2:sw=2:et:
 ;;
-;;  (require "chunk-by")
+;;  (require "chunk")
 ;;
-;;  (chunk-by (fn(a) (% a 3)) '(0 1 2 3 4 5 6 7 8 9)) =>
+;;  (chunk (fn(a) (% a 3)) '(0 1 2 3 4 5 6 7 8 9)) =>
 ;;    ((0 (0 3 6 9)) (1 (1 4 7)) (2 (2 5 8)))
 ;;
-(context 'chunk-by)
+(context 'chunk)
 
-(define(chunk-by:chunk-by func lst)
+(define(chunk:chunk func lst)
   (let (rslt '()
         key nil)
   (dolist (e lst)

@@ -17,7 +17,7 @@
 (define(include:include lsp (ctx 'MAIN))
   (let (flag nil
         path nil
-        dirs (push (real-path) (copy DIRS)))
+        dirs (cons (real-path) (copy DIRS)))
     (dolist (e dirs flag)
       (setq path (append e "/" lsp ".lsp"))
       (when (file? path true)
@@ -32,7 +32,8 @@
 (setq inloaded '())
 
 (define(require:require)
-  (map (fn(a) (when (nil? (find a inloaded))
-                (push a inloaded)
-                (include a)))
+  (map (fn(a)
+          (when (nil? (find a inloaded))
+            (push a inloaded)
+            (include a)))
        (flat (args))))

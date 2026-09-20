@@ -39,9 +39,9 @@
 (define(off? idx) (TN (self .FLAGS idx)))
 
 (define(flag idx value)
-  (setf (self .FLAGS idx) (if(or (= value 1) (= value true)) 1 0)))
+  (setf (self .FLAGS idx) (if (or (= value 1) (= value true)) 1 0)))
 
-(define(set-from lst) (dolist(e lst) (flag $idx e)))
+(define(set-from lst) (dolist (e lst) (flag $idx e)))
 
 (define(nums a0 a1)
   (if (nil? a0) (self .FLAGS)
@@ -50,5 +50,5 @@
       (a0 a1 (self .FLAGS))))
 
 (define(to-int a0 a1)
-  (let (lst (select ZOSTR (nums a0 a1)))
-    (int (join lst) 0 2)))
+  (int (join (select ZOSTR (nums a0 a1))) 0 2))
+

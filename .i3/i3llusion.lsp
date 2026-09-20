@@ -29,7 +29,7 @@
       (throw-error (append "Can not be deleted! : '" POLYBARSOCK "'")))))
 
 (require
-  "Flag" "Cmd" "Cycle" "Slider" "chunk-by" "permutations" "i3llusion/i3ipc")
+  "Flag" "Cmd" "Cycle" "Slider" "chunk" "permutations" "i3llusion/i3ipc")
 
 (constant
   'BASEPATH (append (real-path) "/i3llusion")
@@ -55,14 +55,15 @@
   scratcheds '()
   ipc4cmd (i3ipc I3SOCK)
   ipc4sub (i3ipc I3SOCK)
-  colors (let (lst (explode "d9bf")
-               rslt nil)
-    (seed (time-of-day))
-    (setq rslt (permutations 3 lst)
-          rslt (chunk-by (fn(a) (find (first a) lst)) $it)
-          rslt (map (fn(a) (randomize (last a))) $it)
-          rslt (eval (cons 'map (cons 'list (map quote $it)))))
-    (Cycle (map (fn(a) (join (cons "#" a))) (flat rslt 1))))
+  colors (let (
+    lst (explode "9bdf")
+    rslt nil
+    )
+    (seed (time-of-day) true)
+    (setq rslt (map (curry push "#") (map join (permutations 3 lst)))
+          rslt (chunk (fn(a) (find (last a) lst)) $it)
+          rslt (map randomize (randomize (map last $it))))
+    (Cycle (flat (apply map (cons list rslt)))))
   notify (Cmd {notify-send} "-u" "'** i3llusion **'")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
@@ -153,7 +154,7 @@
 
 (define(letterfactory lttr)
   (let (color (:step colors 1)
-        make (lambda (lt tx) (format LETTERSFMT lt lt lt lt lt color tx)))
+        make (lambda(lt tx) (format LETTERSFMT lt lt lt lt lt color tx)))
   (cond
     ((or (= lttr "M") (= lttr M))
       (setq M:msg (make "M" (M:texts (:to-int M:flag 1 3))))
@@ -187,18 +188,18 @@
     ((or (= lttr "A") (= lttr A))
       (if (:on? A:flag 3)
         (begin
-          (setq A:msg (make "A_a" (if(:on? A:flag 1) "Auto:" "Auto: Off")))
+          (setq A:msg (make "A_a" (if (:on? A:flag 1) "Auto:" "Auto: Off")))
           (when (:on? A:flag 1)
             (extend A:msg
-              (make "A_b" (if(:on? A:flag 4) "SavE," "save,"))
-              (make "A_c" (if(:on? A:flag 5) "MemO" "memo")))))
+              (make "A_b" (if (:on? A:flag 4) "SavE," "save,"))
+              (make "A_c" (if (:on? A:flag 5) "MemO" "memo")))))
         (setq A:msg (make "A_a" (A:texts (:to-int A:flag '(1 4 5))))))
       true)
     (true nil))))
 
 (define(letters2polybar)
-  (let (lst (map (fn(a) a:msg) LETTERS))
-    (write-line 1 (join lst))))
+  (let (str (join (map (fn(a) a:msg) LETTERS)))
+    (write-line 1 str)))
 
 (define(kelvinize)
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
@@ -229,10 +230,12 @@
   (when flag (letters2polybar)))
 
 (define(post-outs)
-  (let (lst (append
-              (map (fn(a) (:nums a:flag)) LETTERS)
-                   (list (:index P:cycle) (:value N:slider)
-                         Z:timelimit (:index Z:cycle))))
+  (let (
+    lst (append (map
+          (fn(a) (:nums a:flag)) LETTERS)
+          (list (:index P:cycle) (:value N:slider)
+                Z:timelimit (:index Z:cycle)))
+    )
     (apply and (list
       (unless (write-file MEMOPATH (string M:memo))
         (:run notify {critical}
@@ -266,34 +269,37 @@
 
 (define(propeller flag , fcsd it)
   (let (lst '())
-    (:seek-tree ipc4cmd (fn(e)
-      (unless (= (lookup "scratchpad_state" e) "none")
-        (push (lookup "window" (first (lookup "nodes" e))) lst -1))
-      (when (= (lookup "focused" e) true) (setq fcsd e))))
-    (when lst (let (fwid (when fcsd (lookup "window" fcsd)))
-      (if (number? fwid)
-        (let (ffon (ends-with (lookup "floating" fcsd) "on"))
-          (setq scratcheds (or (difference $it (difference $it lst)) lst))
-          (setq it
-            (if flag
-              (pop (push fwid scratcheds -1))
-              (pop (push fwid scratcheds) -1)))
-          (:command-wid ipc4cmd fwid (string "swap container with id " it))
-          (:command-wid ipc4cmd it
-            (if ffon
-              "border pixel 6, floating enable"
-              "border none, floating disable"))
-          (when ffon (:run xprop it)))
-      (:command ipc4cmd "scratchpad show"))))))
+    (:seek-tree ipc4cmd (fn(a)
+      (unless (= (lookup "scratchpad_state" a) "none")
+        (push (lookup "window" (first (lookup "nodes" a))) lst -1))
+      (when (= (lookup "focused" a) true) (setq fcsd a))))
+    (when lst
+      (let (fwid (when fcsd (lookup "window" fcsd)))
+        (if (number? fwid)
+          (let (ffon (ends-with (lookup "floating" fcsd) "on"))
+            (setq scratcheds (or (difference $it (difference $it lst)) lst))
+            (setq it
+              (if flag
+                (pop (push fwid scratcheds -1))
+                (pop (push fwid scratcheds) -1)))
+            (:command-wid ipc4cmd fwid (string "swap container with id " it))
+            (:command-wid ipc4cmd it
+              (if ffon
+                "border pixel 6, floating enable"
+                "border none, floating disable"))
+            (when ffon (:run xprop it)))
+        (:command ipc4cmd "scratchpad show"))))))
 
 (define(toggle-memo)
   (when drawer
-    (letn (prop (lookup "window_properties" drawer)
-           rec (list (lookup "class" prop)
-                     (lookup "instance" prop)
-                     (:on? M:flag 1))
-           idx (find rec M:memo)
-           it (list (:on? M:flag 1) (number? idx) (lookup "floating" drawer)))
+    (letn (
+      wp (lookup "window_properties" drawer)
+      rec (list (lookup "class" wp)
+                (lookup "instance" wp)
+                (:on? M:flag 1))
+      idx (find rec M:memo)
+      it (list (:on? M:flag 1) (number? idx) (lookup "floating" drawer))
+      )
       (if (= '(true true "user_on") it) (pop M:memo idx)
           (= '(true nil "user_off") it) (push rec M:memo)
           (= '(nil true "user_off") it) (pop M:memo idx)
@@ -396,11 +402,11 @@
               (- (+ P:wrkspc_y P:wrkspc_height) height))))
       (:at P:cycle))))
 
-(define(check-wcwi wprop)
-  (let (wc (lookup "class" wprop)
-        wi (lookup "instance" wprop))
-  (catch (:seek-tree ipc4cmd (fn(e , wp)
-    (when (setq wp (lookup "window_properties" e))
+(define(check-wcwi wp)
+  (let (wc (lookup "class" wp)
+        wi (lookup "instance" wp))
+  (catch (:seek-tree ipc4cmd (fn(a)
+    (when (setq wp (lookup "window_properties" a))
       (when (and (= wc (lookup "class" wp))
                  (!= wi (lookup "instance" wp)))))
         (throw true))))))
@@ -417,9 +423,9 @@
               (setq Z:fullscreen_mode 0))))))
 
 (define(on-floating bx)
-  (let (wtype (lookup "window_type" bx))
+  (let (wt (lookup "window_type" bx))
     (setq drawer bx)
-    (if (or (= wtype "normal") (= wtype "unknown"))
+    (if (or (= wt "normal") (= wt "unknown"))
       (:command-wid ipc4cmd (lookup "window" bx)
         (if (ends-with (lookup "floating" bx) "on")
           (append "border pixel 6, " (go2position bx))
@@ -429,12 +435,12 @@
         (:command-wid ipc4cmd (lookup "window" bx) (go2position bx 0.1))))))
 
 (define(on-new bx)
-  (let (wtype (lookup "window_type" bx))
-    (when (or (= wtype "normal") (= wtype "unknown"))
-    (letn (prop (lookup "window_properties" bx)
-           idx (find (list (lookup "class" prop)
-                     (lookup "instance" prop)
-                     (:on? M:flag 1))
+  (let (wt (lookup "window_type" bx))
+    (when (or (= wt "normal") (= wt "unknown"))
+    (letn (wp (lookup "window_properties" bx)
+           idx (find (list (lookup "class" wp)
+                           (lookup "instance" wp)
+                           (:on? M:flag 1))
                      M:memo)
            rec (list (:on? M:flag 1) (:on? M:flag 2) (number? idx)))
       (if (= '(true true true) rec)
@@ -444,7 +450,7 @@
           (first rec)
           (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
           (:command-wid ipc4cmd (lookup "window" bx)
-            (if(check-wcwi prop) "floating enable" "floating disable")))))))
+            (if(check-wcwi wp) "floating enable" "floating disable")))))))
 
 (define(on-move bx)
   (unless (= (lookup "scratchpad_state" bx) "none")
@@ -465,7 +471,7 @@
 
 ; main loop
 (local (flag data json lttr)
-  (map delete '(chunk-by include isinPATH permutations require))
+  (map delete '(chunk include isinPATH permutations require))
   (:subscribe ipc4sub {[ "window", "workspace" ]})
   (:run C:off)
   (:run Z:off)
