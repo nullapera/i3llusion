@@ -44,10 +44,11 @@
 (define(set-from lst) (dolist (e lst) (flag $idx e)))
 
 (define(nums a0 a1)
-  (if (nil? a0) (self .FLAGS)
-      (list? a0) (select (self .FLAGS) a0)
-      (nil? a1) (a0 (self .FLAGS))
-      (a0 a1 (self .FLAGS))))
+  (if
+    (nil? a0) (self .FLAGS)
+    (list? a0) (select (self .FLAGS) a0)
+    (nil? a1) (a0 (self .FLAGS))
+    (a0 a1 (self .FLAGS))))
 
 (define(to-int a0 a1)
   (int (join (select ZOSTR (nums a0 a1))) 0 2))

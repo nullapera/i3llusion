@@ -9,9 +9,10 @@
 
 (define(dirname:dirname path isbase)
   (let (
-    rslt (if (find path '("." ".." "/" "")) (list path "")
-             (regex {\A(.+)/([^/]*)\z} path) (list $1 $2)
-             (= (first path) "/") (list (pop path) path)
-             '("." ""))
+    rslt (if
+      (find path '("." ".." "/" "")) (list path "")
+      (regex {\A(.+)/([^/]*)\z} path) (list $1 $2)
+      (= (first path) "/") (list (pop path) path)
+      '("." ""))
     )
     (if isbase rslt (first rslt))))

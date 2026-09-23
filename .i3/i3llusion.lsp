@@ -55,15 +55,16 @@
   scratcheds '()
   ipc4cmd (i3ipc I3SOCK)
   ipc4sub (i3ipc I3SOCK)
-  colors (let (
-    lst (explode "9bdf")
-    rslt nil
+  colors (letn (
+    hxa (explode "9bdf")
+    chr (char (apply max (map char hxa)))
+    lst (permutations 3 hxa)
     )
-    (seed (time-of-day) true)
-    (setq rslt (map (curry push "#") (map join (permutations 3 lst)))
-          rslt (chunk (fn(a) (find (last a) lst)) $it)
-          rslt (map randomize (randomize (map last $it))))
-    (Cycle (flat (apply map (cons list rslt)))))
+    (seed (time-of-day))
+    (setq lst (map (curry push "#") (map join $it))
+          lst (filter first (chunk (curry find chr) $it))
+          lst (map randomize (randomize (map last $it))))
+    (Cycle (flat (apply map (cons list lst)))))
   notify (Cmd {notify-send} "-u" "'** i3llusion **'")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
@@ -198,8 +199,7 @@
     (true nil))))
 
 (define(letters2polybar)
-  (let (str (join (map (fn(a) a:msg) LETTERS)))
-    (write-line 1 str)))
+  (write-line 1 (join (map (fn(a) a:msg) LETTERS))))
 
 (define(kelvinize)
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
@@ -267,28 +267,27 @@
       (:run notify {critical}
         (append "'post-ins: Can not read from " CONDPATH "!'")))))
 
-(define(propeller flag , fcsd it)
-  (let (lst '())
-    (:seek-tree ipc4cmd (fn(a)
-      (unless (= (lookup "scratchpad_state" a) "none")
-        (push (lookup "window" (first (lookup "nodes" a))) lst -1))
-      (when (= (lookup "focused" a) true) (setq fcsd a))))
-    (when lst
-      (let (fwid (when fcsd (lookup "window" fcsd)))
-        (if (number? fwid)
-          (let (ffon (ends-with (lookup "floating" fcsd) "on"))
-            (setq scratcheds (or (difference $it (difference $it lst)) lst))
-            (setq it
-              (if flag
-                (pop (push fwid scratcheds -1))
-                (pop (push fwid scratcheds) -1)))
-            (:command-wid ipc4cmd fwid (string "swap container with id " it))
-            (:command-wid ipc4cmd it
-              (if ffon
-                "border pixel 6, floating enable"
-                "border none, floating disable"))
-            (when ffon (:run xprop it)))
-        (:command ipc4cmd "scratchpad show"))))))
+(define(propeller flag , lst fcsd it)
+  (:seek-tree ipc4cmd (fn(a)
+    (unless (= (lookup "scratchpad_state" a) "none")
+      (push (lookup "window" (first (lookup "nodes" a))) lst -1))
+    (when (= (lookup "focused" a) true) (setq fcsd a))))
+  (when lst
+    (let (fwid (when fcsd (lookup "window" fcsd)))
+      (if (number? fwid)
+        (let (ffon (ends-with (lookup "floating" fcsd) "on"))
+          (setq scratcheds (or (difference $it (difference $it lst)) lst))
+          (setq it
+            (if flag
+              (pop (push fwid scratcheds -1))
+              (pop (push fwid scratcheds) -1)))
+          (:command-wid ipc4cmd fwid (string "swap container with id " it))
+          (:command-wid ipc4cmd it
+            (if ffon
+              "border pixel 6, floating enable"
+              "border none, floating disable"))
+          (when ffon (:run xprop it)))
+      (:command ipc4cmd "scratchpad show")))))
 
 (define(toggle-memo)
   (when drawer
@@ -300,10 +299,11 @@
       idx (find rec M:memo)
       it (list (:on? M:flag 1) (number? idx) (lookup "floating" drawer))
       )
-      (if (= '(true true "user_on") it) (pop M:memo idx)
-          (= '(true nil "user_off") it) (push rec M:memo)
-          (= '(nil true "user_off") it) (pop M:memo idx)
-          (= '(nil nil "user_on") it) (push rec M:memo)))))
+      (if
+        (= '(true true "user_on") it) (pop M:memo idx)
+        (= '(true nil "user_off") it) (push rec M:memo)
+        (= '(nil true "user_off") it) (pop M:memo idx)
+        (= '(nil nil "user_on") it) (push rec M:memo)))))
 
 (define(lettershop lttr msg , flag)
   (case lttr
@@ -318,9 +318,10 @@
       (true (:toggle M:flag (int (first msg)))
             (:set-to M:cycle (:nums M:flag)))))
     ; Position
-    ("P" (if (= (last msg) "3") (:toggle P:flag 3)
-             (= '("b" "4") msg) (:step P:cycle +1)
-             (= '("b" "5") msg) (:step P:cycle -1)))
+    ("P" (if
+      (= (last msg) "3") (:toggle P:flag 3)
+      (= '("b" "4") msg) (:step P:cycle +1)
+      (= '("b" "5") msg) (:step P:cycle -1)))
     ; Nightlight
     ("N" (case (last msg)
       ("1" (:off N:flag 0)
@@ -397,9 +398,10 @@
              height (lookup "height" rect))
         (format {%d px %d px}
           (lookup "x" rect)
-          (if (<= height (- P:wrkspc_height yo)) (+ P:wrkspc_y yo)
-              (<= P:wrkspc_height height) P:wrkspc_y
-              (- (+ P:wrkspc_y P:wrkspc_height) height))))
+          (if
+            (<= height (- P:wrkspc_height yo)) (+ P:wrkspc_y yo)
+            (<= P:wrkspc_height height) P:wrkspc_y
+            (- (+ P:wrkspc_y P:wrkspc_height) height))))
       (:at P:cycle))))
 
 (define(check-wcwi wp)
@@ -443,14 +445,15 @@
                            (:on? M:flag 1))
                      M:memo)
            rec (list (:on? M:flag 1) (:on? M:flag 2) (number? idx)))
-      (if (= '(true true true) rec)
-          (:command-wid ipc4cmd (lookup "window" bx) "floating disable")
-          (= '(nil true true) rec)
-          (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
-          (first rec)
-          (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
-          (:command-wid ipc4cmd (lookup "window" bx)
-            (if(check-wcwi wp) "floating enable" "floating disable")))))))
+      (if
+        (= '(true true true) rec)
+        (:command-wid ipc4cmd (lookup "window" bx) "floating disable")
+        (= '(nil true true) rec)
+        (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
+        (first rec)
+        (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
+        (:command-wid ipc4cmd (lookup "window" bx)
+          (if(check-wcwi wp) "floating enable" "floating disable")))))))
 
 (define(on-move bx)
   (unless (= (lookup "scratchpad_state" bx) "none")
