@@ -17,12 +17,14 @@
   'I3SOCK (env "I3SOCK")
   'POLYBARSOCK (replace {/[^/]+\z} (copy I3SOCK) "/i3llusion.ipc" 0))
 
-(let (selfpid (sys-info 7)
-      pids (find-all
-        "i3llusion"
-        (exec {ps -C newlisp -o pid,args})
-        (int (first (parse $it)))
-        find))
+(let (
+  selfpid (sys-info 7)
+  pids (find-all
+    "i3llusion"
+    (exec {ps -C newlisp -o pid,args})
+    (int (first (parse $it)))
+    find)
+  )
   (map destroy (replace selfpid pids))
   (when (file? POLYBARSOCK)
     (unless (delete-file POLYBARSOCK)
@@ -56,7 +58,7 @@
   ipc4cmd (i3ipc I3SOCK)
   ipc4sub (i3ipc I3SOCK)
   colors (letn (
-    hxa (explode "9bdf")
+    hxa (explode "abef")
     chr (char (apply max (map char hxa)))
     lst (permutations 3 hxa)
     )
@@ -153,50 +155,54 @@
         (send parentpid data)))
     true))
 
+(macro(set-shape VAR LTTR TXT)
+  (setq VAR
+    (format LETTERSFMT LTTR LTTR LTTR LTTR LTTR (:at colors) TXT)))
+
+(macro(add-shape VAR LTTR TXT)
+  (extend VAR
+    (format LETTERSFMT LTTR LTTR LTTR LTTR LTTR (:at colors) TXT)))
+
 (define(letterfactory lttr)
-  (let (color (:step colors 1)
-        make (lambda(lt tx) (format LETTERSFMT lt lt lt lt lt color tx)))
+  (:step colors 1)
   (cond
     ((or (= lttr "M") (= lttr M))
-      (setq M:msg (make "M" (M:texts (:to-int M:flag 1 3))))
+      (set-shape M:msg "M" (M:texts (:to-int M:flag 1 3)))
       true)
     ((or (= lttr "P") (= lttr P))
-      (setq P:msg (make "P_a"
-        (if (:on? P:flag 3)
-          "Position:"
-          (append "P" (first (:at P:cycle))))))
-      (when (:on? P:flag 3) (extend P:msg (make "P_b" (:at P:cycle))))
+      (set-shape P:msg "P_a"
+        (if (:on? P:flag 3) "Position:" (append "P" (first (:at P:cycle)))))
+      (when (:on? P:flag 3) (add-shape P:msg "P_b" (:at P:cycle)))
       true)
     ((or (= lttr "N") (= lttr N))
-      (setq N:msg (make "N_a" (N:texts (:to-int N:flag '(0 1 3)))))
+      (set-shape N:msg "N_a" (N:texts (:to-int N:flag '(0 1 3))))
       (when (and (:on? N:flag 3) (:on? N:flag 1))
-        (extend N:msg (make "N_b" (string (:value N:slider) "K"))))
+        (add-shape N:msg "N_b" (string (:value N:slider) "K")))
       true)
     ((or (= lttr "C") (= lttr C))
-      (setq C:msg (make "C" (C:texts (:to-int C:flag '(1 3)))))
+      (set-shape C:msg "C" (C:texts (:to-int C:flag '(1 3))))
       true)
     ((or (= lttr "Z") (= lttr Z))
       (if (:on? Z:flag 3)
         (begin
-          (setq Z:msg
-            (make "Z_a" (if (:on? Z:flag 1) "snooZe: lock" "snooZe: UNlock")))
-          (extend Z:msg
-            (make "Z_b" (format {<  %.1fhrs} (div Z:timelimit 10)))
-            (make "Z_c" (append "<  " (:at Z:cycle)))))
-        (setq Z:msg (make "Z_d" (format (if (:on? Z:flag 1) {Z%.1f} {z%.1f})
-                                        (div Z:timecounter 10)))))
+          (set-shape Z:msg "Z_a"
+            (if (:on? Z:flag 1) "snooZe: lock" "snooZe: UNlock"))
+          (add-shape Z:msg "Z_b" (format {<  %.1fhrs} (div Z:timelimit 10)))
+          (add-shape Z:msg "Z_c" (append "<  " (:at Z:cycle))))
+        (set-shape Z:msg "Z_d"
+          (format (if (:on? Z:flag 1) {Z%.1f} {z%.1f})
+                                      (div Z:timecounter 10))))
       true)
     ((or (= lttr "A") (= lttr A))
       (if (:on? A:flag 3)
         (begin
-          (setq A:msg (make "A_a" (if (:on? A:flag 1) "Auto:" "Auto: Off")))
+          (set-shape A:msg "A_a" (if (:on? A:flag 1) "Auto:" "Auto: Off"))
           (when (:on? A:flag 1)
-            (extend A:msg
-              (make "A_b" (if (:on? A:flag 4) "SavE," "save,"))
-              (make "A_c" (if (:on? A:flag 5) "MemO" "memo")))))
-        (setq A:msg (make "A_a" (A:texts (:to-int A:flag '(1 4 5))))))
+            (add-shape A:msg "A_b" (if (:on? A:flag 4) "SavE," "save,"))
+            (add-shape A:msg "A_c" (if (:on? A:flag 5) "MemO" "memo"))))
+        (set-shape A:msg "A_a" (A:texts (:to-int A:flag '(1 4 5)))))
       true)
-    (true nil))))
+    (true nil)))
 
 (define(letters2polybar)
   (write-line 1 (join (map (fn(a) a:msg) LETTERS))))
@@ -232,9 +238,9 @@
 (define(post-outs)
   (let (
     lst (append (map
-          (fn(a) (:nums a:flag)) LETTERS)
-          (list (:index P:cycle) (:value N:slider)
-                Z:timelimit (:index Z:cycle)))
+      (fn(a) (:nums a:flag)) LETTERS)
+      (list (:index P:cycle) (:value N:slider)
+            Z:timelimit (:index Z:cycle)))
     )
     (apply and (list
       (unless (write-file MEMOPATH (string M:memo))
@@ -267,27 +273,26 @@
       (:run notify {critical}
         (append "'post-ins: Can not read from " CONDPATH "!'")))))
 
-(define(propeller flag , lst fcsd it)
+(define(propeller flag , it lst (fcsd '()))
   (:seek-tree ipc4cmd (fn(a)
     (unless (= (lookup "scratchpad_state" a) "none")
       (push (lookup "window" (first (lookup "nodes" a))) lst -1))
     (when (= (lookup "focused" a) true) (setq fcsd a))))
   (when lst
-    (let (fwid (when fcsd (lookup "window" fcsd)))
-      (if (number? fwid)
+    (let (fwid (lookup "window" fcsd))
+      (if fwid
         (let (ffon (ends-with (lookup "floating" fcsd) "on"))
           (setq scratcheds (or (difference $it (difference $it lst)) lst))
-          (setq it
-            (if flag
-              (pop (push fwid scratcheds -1))
-              (pop (push fwid scratcheds) -1)))
+          (setq it (if flag
+            (pop (push fwid scratcheds -1))
+            (pop (push fwid scratcheds) -1)))
           (:command-wid ipc4cmd fwid (string "swap container with id " it))
           (:command-wid ipc4cmd it
             (if ffon
               "border pixel 6, floating enable"
               "border none, floating disable"))
           (when ffon (:run xprop it)))
-      (:command ipc4cmd "scratchpad show")))))
+        (:command ipc4cmd "scratchpad show")))))
 
 (define(toggle-memo)
   (when drawer
@@ -297,7 +302,7 @@
                 (lookup "instance" wp)
                 (:on? M:flag 1))
       idx (find rec M:memo)
-      it (list (:on? M:flag 1) (number? idx) (lookup "floating" drawer))
+      it (list (:on? M:flag 1) idx (lookup "floating" drawer))
       )
       (if
         (= '(true true "user_on") it) (pop M:memo idx)
@@ -319,9 +324,9 @@
             (:set-to M:cycle (:nums M:flag)))))
     ; Position
     ("P" (if
-      (= (last msg) "3") (:toggle P:flag 3)
-      (= '("b" "4") msg) (:step P:cycle +1)
-      (= '("b" "5") msg) (:step P:cycle -1)))
+            (= (last msg) "3") (:toggle P:flag 3)
+            (= '("b" "4") msg) (:step P:cycle +1)
+            (= '("b" "5") msg) (:step P:cycle -1)))
     ; Nightlight
     ("N" (case (last msg)
       ("1" (:off N:flag 0)
@@ -407,11 +412,11 @@
 (define(check-wcwi wp)
   (let (wc (lookup "class" wp)
         wi (lookup "instance" wp))
-  (catch (:seek-tree ipc4cmd (fn(a)
-    (when (setq wp (lookup "window_properties" a))
-      (when (and (= wc (lookup "class" wp))
-                 (!= wi (lookup "instance" wp)))))
-        (throw true))))))
+    (catch (:seek-tree ipc4cmd (fn(a)
+      (when (setq wp (lookup "window_properties" a))
+        (when (and (= wc (lookup "class" wp))
+                   (!= wi (lookup "instance" wp)))))
+          (throw true))))))
 
 (define(on-fullscreen bx)
   (setq drawer bx)
@@ -439,29 +444,31 @@
 (define(on-new bx)
   (let (wt (lookup "window_type" bx))
     (when (or (= wt "normal") (= wt "unknown"))
-    (letn (wp (lookup "window_properties" bx)
-           idx (find (list (lookup "class" wp)
-                           (lookup "instance" wp)
-                           (:on? M:flag 1))
-                     M:memo)
-           rec (list (:on? M:flag 1) (:on? M:flag 2) (number? idx)))
-      (if
-        (= '(true true true) rec)
-        (:command-wid ipc4cmd (lookup "window" bx) "floating disable")
-        (= '(nil true true) rec)
-        (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
-        (first rec)
-        (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
-        (:command-wid ipc4cmd (lookup "window" bx)
-          (if(check-wcwi wp) "floating enable" "floating disable")))))))
+      (letn (
+        wp (lookup "window_properties" bx)
+        idx (find (list (lookup "class" wp)
+                        (lookup "instance" wp)
+                        (:on? M:flag 1))
+                  M:memo)
+        rec (list (:on? M:flag 1) (:on? M:flag 2) (number? idx))
+        )
+        (if
+          (= '(true true true) rec)
+          (:command-wid ipc4cmd (lookup "window" bx) "floating disable")
+          (= '(nil true true) rec)
+          (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
+          (first rec)
+          (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
+          (:command-wid ipc4cmd (lookup "window" bx)
+            (if(check-wcwi wp) "floating enable" "floating disable")))))))
 
 (define(on-move bx)
   (unless (= (lookup "scratchpad_state" bx) "none")
     (setq vbox:vbox (first (lookup "nodes" bx)))
     (on-new vbox)
     (on-floating vbox)
-    (when (ends-with (lookup "floating" vbox) "on")
-      (:run xprop (lookup "window" vbox)))))
+    (when (ends-with (lookup "floating" vbox:vbox) "on")
+      (:run xprop (lookup "window" vbox:vbox)))))
 
 (define(on-workspace-focus , rect)
   (let (lst (json-parse (:getworkspaces ipc4cmd)))
