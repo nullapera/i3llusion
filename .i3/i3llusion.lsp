@@ -280,7 +280,7 @@
     (when (= (lookup "focused" a) true) (setq fcsd a))))
   (when lst
     (let (fwid (lookup "window" fcsd))
-      (if fwid
+      (if (number? fwid)
         (let (ffon (ends-with (lookup "floating" fcsd) "on"))
           (setq scratcheds (or (difference $it (difference $it lst)) lst))
           (setq it
