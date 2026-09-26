@@ -238,9 +238,9 @@
 (define(post-outs)
   (let (
     lst (append (map
-      (fn(a) (:nums a:flag)) LETTERS)
-      (list (:index P:cycle) (:value N:slider)
-            Z:timelimit (:index Z:cycle)))
+     (fn(a) (:nums a:flag)) LETTERS)
+     (list (:index P:cycle) (:value N:slider)
+           Z:timelimit (:index Z:cycle)))
     )
     (apply and (list
       (unless (write-file MEMOPATH (string M:memo))
@@ -280,12 +280,13 @@
     (when (= (lookup "focused" a) true) (setq fcsd a))))
   (when lst
     (let (fwid (lookup "window" fcsd))
-      (if (number? fwid)
+      (if fwid
         (let (ffon (ends-with (lookup "floating" fcsd) "on"))
           (setq scratcheds (or (difference $it (difference $it lst)) lst))
-          (setq it (if flag
-            (pop (push fwid scratcheds -1))
-            (pop (push fwid scratcheds) -1)))
+          (setq it
+            (if flag
+              (pop (push fwid scratcheds -1))
+              (pop (push fwid scratcheds) -1)))
           (:command-wid ipc4cmd fwid (string "swap container with id " it))
           (:command-wid ipc4cmd it
             (if ffon
@@ -302,7 +303,7 @@
                 (lookup "instance" wp)
                 (:on? M:flag 1))
       idx (find rec M:memo)
-      it (list (:on? M:flag 1) idx (lookup "floating" drawer))
+      it (list (:on? M:flag 1) (number? idx) (lookup "floating" drawer))
       )
       (if
         (= '(true true "user_on") it) (pop M:memo idx)
