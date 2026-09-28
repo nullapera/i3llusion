@@ -414,15 +414,6 @@
             (- (+ P:wrkspc_y P:wrkspc_height) height))))
       (:at P:cycle))))
 
-(define(check-wcwi wp)
-  (let (wc (lookup "class" wp)
-        wi (lookup "instance" wp))
-    (catch (:seek-tree ipc4cmd (fn(a)
-      (when (setq wp (lookup "window_properties" a))
-        (when (and (= wc (lookup "class" wp))
-                   (!= wi (lookup "instance" wp)))))
-          (throw true))))))
-
 (define(on-fullscreen bx)
   (setq drawer bx)
   (when (:on? Z:flag 1)
@@ -459,14 +450,11 @@
         rec (list (:on? M:flag 1) (:on? M:flag 2) (number? idx))
         )
         (if
-          (= '(true true true) rec)
+          (or (= '(true true true) rec) (= '(nil true nil) rec))
           (:command-wid ipc4cmd (lookup "window" bx) "floating disable")
-          (= '(nil true true) rec)
+          (or (= '(nil true true) rec) (first rec))
           (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
-          (first rec)
-          (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
-          (:command-wid ipc4cmd (lookup "window" bx)
-            (if(check-wcwi wp) "floating enable" "floating disable")))))))
+          (:command-wid ipc4cmd (lookup "window" bx) "floating disable"))))))
 
 (define(on-move bx)
   (unless (= (lookup "scratchpad_state" bx) "none")
