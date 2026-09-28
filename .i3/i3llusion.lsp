@@ -31,7 +31,7 @@
       (throw-error (append "Can not be deleted! : '" POLYBARSOCK "'")))))
 
 (require
-  "Flag" "Cmd" "Cycle" "Slider" "chunk" "permutations" "i3llusion/i3ipc")
+  "Flag" "Cmd" "Cycle" "Slider" "permutations" "i3llusion/i3ipc")
 
 (constant
   'BASEPATH (append (real-path) "/i3llusion")
@@ -58,15 +58,16 @@
   ipc4cmd (i3ipc I3SOCK)
   ipc4sub (i3ipc I3SOCK)
   colors (letn (
-    hxa (explode "abef")
+    hxa (explode "acef")
     chr (char (apply max (map char hxa)))
     lst (permutations 3 hxa)
+    idx 0
     )
     (seed (time-of-day))
     (setq lst (map (curry push "#") (map join $it))
-          lst (filter first (chunk (curry find chr) $it))
-          lst (map randomize (randomize (map last $it))))
-    (Cycle (flat (apply map (cons list lst)))))
+          lst (filter (curry find chr) $it)
+          idx (/ (length lst) 2))
+    (Cycle (flat (map list (idx lst) (randomize (0 idx lst))))))
   notify (Cmd {notify-send} "-u" "'** i3llusion **'")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
@@ -191,7 +192,7 @@
           (add-shape Z:msg "Z_c" (append "<  " (:at Z:cycle))))
         (set-shape Z:msg "Z_d"
           (format (if (:on? Z:flag 1) {Z%.1f} {z%.1f})
-                                      (div Z:timecounter 10))))
+                  (div Z:timecounter 10))))
       true)
     ((or (= lttr "A") (= lttr A))
       (if (:on? A:flag 3)
@@ -273,27 +274,30 @@
       (:run notify {critical}
         (append "'post-ins: Can not read from " CONDPATH "!'")))))
 
-(define(propeller flag , it lst (fcsd '()))
+(define(propeller flag , lst (fcsd '()))
   (:seek-tree ipc4cmd (fn(a)
     (unless (= (lookup "scratchpad_state" a) "none")
       (push (lookup "window" (first (lookup "nodes" a))) lst -1))
     (when (= (lookup "focused" a) true) (setq fcsd a))))
-  (when lst
-    (let (fwid (lookup "window" fcsd))
+  (let (fwid (lookup "window" fcsd))
+    (if lst
       (if (number? fwid)
         (let (ffon (ends-with (lookup "floating" fcsd) "on"))
           (setq scratcheds (or (difference $it (difference $it lst)) lst))
-          (setq it
-            (if flag
+          (let (
+            it (if flag
               (pop (push fwid scratcheds -1))
-              (pop (push fwid scratcheds) -1)))
-          (:command-wid ipc4cmd fwid (string "swap container with id " it))
-          (:command-wid ipc4cmd it
-            (if ffon
-              "border pixel 6, floating enable"
-              "border none, floating disable"))
-          (when ffon (:run xprop it)))
-        (:command ipc4cmd "scratchpad show")))))
+              (pop (push fwid scratcheds) -1))
+            )
+            (:command-wid ipc4cmd fwid (string "swap container with id " it))
+            (:command-wid ipc4cmd it
+              (if ffon
+                "border pixel 6, floating enable"
+                "border none, floating disable"))
+            (when ffon (:run xprop it))))
+        (:command ipc4cmd "scratchpad show"))
+      (when (and (number? fwid) flag)
+        (:command-wid ipc4cmd fwid "move scratchpad")))))
 
 (define(toggle-memo)
   (when drawer
@@ -396,11 +400,11 @@
       (true (systemctl (first msg))))))
   flag)
 
-(define(go2position bx (lt1 0))
+(define(go2position (lt1 0))
   (append "move position "
     (if (= (:at P:cycle) "upside")
       (letn (yo (mul P:wrkspc_height lt1)
-             rect (lookup "rect" bx)
+             rect (lookup "rect" drawer)
              height (lookup "height" rect))
         (format {%d px %d px}
           (lookup "x" rect)
@@ -423,24 +427,25 @@
   (setq drawer bx)
   (when (:on? Z:flag 1)
     (let (it (cons (lookup "fullscreen_mode" bx) Z:fullscreen_mode))
-      (cond ((= '(1 0) it)
-              (:run Z:off)
-              (setq Z:fullscreen_mode 1))
-            ((= '(0 1) it)
-              (:run Z:on)
-              (setq Z:fullscreen_mode 0))))))
+      (cond
+        ((= '(1 0) it)
+          (:run Z:off)
+          (setq Z:fullscreen_mode 1))
+        ((= '(0 1) it)
+          (:run Z:on)
+          (setq Z:fullscreen_mode 0))))))
 
 (define(on-floating bx)
+  (setq drawer bx)
   (let (wt (lookup "window_type" bx))
-    (setq drawer bx)
     (if (or (= wt "normal") (= wt "unknown"))
       (:command-wid ipc4cmd (lookup "window" bx)
         (if (ends-with (lookup "floating" bx) "on")
-          (append "border pixel 6, " (go2position bx))
+          (append "border pixel 6, " (go2position))
           "border none"))
       (when (and (= (:at P:cycle) "upside")
                  (ends-with (lookup "floating" bx) "on"))
-        (:command-wid ipc4cmd (lookup "window" bx) (go2position bx 0.1))))))
+        (:command-wid ipc4cmd (lookup "window" bx) (go2position 0.1))))))
 
 (define(on-new bx)
   (let (wt (lookup "window_type" bx))
@@ -472,8 +477,8 @@
       (:run xprop (lookup "window" vbox:vbox)))))
 
 (define(on-workspace-focus , rect)
+  (setq drawer nil)
   (let (lst (json-parse (:getworkspaces ipc4cmd)))
-    (setq drawer nil)
     (dolist (e lst rect)
       (when (= (lookup "focused" e) true)
         (setq rect (lookup "rect" e)
@@ -482,7 +487,7 @@
 
 ; main loop
 (local (flag data json lttr)
-  (map delete '(chunk include isinPATH permutations require))
+  (map delete '(include isinPATH permutations require))
   (:subscribe ipc4sub {[ "window", "workspace" ]})
   (:run C:off)
   (:run Z:off)
