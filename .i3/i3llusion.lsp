@@ -307,13 +307,15 @@
                 (lookup "instance" wp)
                 (:on? M:flag 1))
       idx (find rec M:memo)
-      it (list (:on? M:flag 1) (number? idx) (lookup "floating" drawer))
+      it (list (:on? M:flag 1)
+               (number? idx)
+               (ends-with (lookup "floating" drawer) "on"))
       )
       (if
-        (= '(true true "user_on") it) (pop M:memo idx)
-        (= '(true nil "user_off") it) (push rec M:memo)
-        (= '(nil true "user_off") it) (pop M:memo idx)
-        (= '(nil nil "user_on") it) (push rec M:memo)))))
+        (= '(true true true) it) (pop M:memo idx)
+        (= '(true nil nil) it) (push rec M:memo)
+        (= '(nil true nil) it) (pop M:memo idx)
+        (= '(nil nil true) it) (push rec M:memo)))))
 
 (define(lettershop lttr msg , flag)
   (case lttr
@@ -447,14 +449,25 @@
                         (lookup "instance" wp)
                         (:on? M:flag 1))
                   M:memo)
-        rec (list (:on? M:flag 1) (:on? M:flag 2) (number? idx))
+        it (list (:on? M:flag 2)
+                 (number? idx)
+                 (ends-with (lookup "floating" bx) "on"))
         )
-        (if
-          (or (= '(true true true) rec) (= '(nil true nil) rec))
-          (:command-wid ipc4cmd (lookup "window" bx) "floating disable")
-          (or (= '(nil true true) rec) (first rec))
-          (:command-wid ipc4cmd (lookup "window" bx) "floating enable")
-          (:command-wid ipc4cmd (lookup "window" bx) "floating disable"))))))
+        (catch (:command-wid ipc4cmd (lookup "window" bx)
+          (append "floating "
+            (if (:on? M:flag 1)
+              (cond
+                ((= '(true true true) it) "disable")
+                ((= '(true nil nil) it) "enable")
+                ((= '(nil true nil) it) "enable")
+                ((= '(nil nil nil) it) "enable")
+                (true (throw)))
+              (cond
+                ((= '(true true nil) it) "enable")
+                ((= '(true nil true) it) "disable")
+                ((= '(nil true true) it) "disable")
+                ((= '(nil nil true) it) "disable")
+                (true (throw)))))))))))
 
 (define(on-move bx)
   (unless (= (lookup "scratchpad_state" bx) "none")
