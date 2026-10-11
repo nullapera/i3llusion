@@ -33,22 +33,23 @@
 (require
   "Flag" "Cmd" "Cycle" "Slider" "permutations" "i3llusion/i3ipc")
 
-(constant
-  'BASEPATH (append (real-path) "/i3llusion")
-  'MEMOPATH (append BASEPATH "-memo.dat")
-  'CONDPATH (append BASEPATH "-cond.dat")
-  'LETTERSFMT (let (p (append BASEPATH "-msg.lsp"))
-    (append
-      "%%{A1:" p " %s_1:}"
-      "%%{A2:" p " %s_2:}"
-      "%%{A3:" p " %s_3:}"
-      "%%{A4:" p " %s_4:}"
-      "%%{A5:" p " %s_5:}"
+(letn (pth0 (append (real-path) "/i3llusion")
+       pth1 (append pth0 "-msg.lsp"))
+  (constant
+    'MEMOPATH (append pth0 "-memo.dat")
+    'CONDPATH (append pth0 "-cond.dat")
+    'PICOMPATH (append pth0 "-picom.conf")
+    'LETTERSFMT (append
+      "%%{A1:" pth1 " %s_1:}"
+      "%%{A2:" pth1 " %s_2:}"
+      "%%{A3:" pth1 " %s_3:}"
+      "%%{A4:" pth1 " %s_4:}"
+      "%%{A5:" pth1 " %s_5:}"
       "%%{F%s} %s "
-      "%%{A}%%{A}%%{A}%%{A}%%{A}"))
-  'WARNLIMIT 2
-  'BESIX 6
-  'TICKLIMIT (/ 3600 10 BESIX))
+      "%%{A}%%{A}%%{A}%%{A}%%{A}")
+    'WARNLIMIT 2
+    'BESIX 6
+    'TICKLIMIT (/ 3600 10 BESIX)))
 
 (setq
   scratcheds '()
@@ -106,7 +107,7 @@
 
 (setq ; C: Compositor
   C:flag (Flag 4 '(0 1))
-  C:on (Cmd {picom} "-b --config" (append BASEPATH "-picom.conf"))
+  C:on (Cmd {picom} "-b --config" PICOMPATH)
   C:off (Cmd {pkill} "picom")
   C:msg ""
   C:texts '("c" "Compositor: Off" "C" "Compositor: On"))
