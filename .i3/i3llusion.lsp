@@ -51,14 +51,13 @@
   'TICKLIMIT (/ 3600 10 BESIX))
 
 (setq
-  box:box nil
-  vbox:vbox nil
-  drawer nil
   scratcheds '()
+  before (date-value)
+  polybarsock (net-listen POLYBARSOCK)
   ipc4cmd (i3ipc I3SOCK)
   ipc4sub (i3ipc I3SOCK)
   colors (letn (
-    hxa (explode "acef")
+    hxa (explode "acff")
     chr (char (apply max (map char hxa)))
     lst (permutations 3 hxa)
     idx 0
@@ -67,7 +66,7 @@
     (setq lst (map (curry push "#") (map join $it))
           lst (filter (curry find chr) $it)
           idx (/ (length lst) 2))
-    (Cycle (flat (map list (idx lst) (randomize (0 idx lst))))))
+    (Cycle (flat (map list (randomize (idx lst)) (randomize (0 idx lst))))))
   notify (Cmd {notify-send} "-u" "'** i3llusion **'")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
@@ -142,20 +141,6 @@
 (constant
   'LETTERS (list M P N C Z A) 'TICKS (list N Z A X))
 
-(define polybarpid
-  (spawn 'polybarspawn
-    (let (conn nil
-          data nil
-          parentpid (sys-info 6)
-          socket (net-listen POLYBARSOCK))
-      (while true
-        (setq conn (net-accept socket))
-        (until(net-select conn "r" 35000))
-        (net-receive conn data 256)
-        (net-close conn)
-        (send parentpid data)))
-    true))
-
 (macro(set-shape VAR LTTR TXT)
   (setq VAR
     (format LETTERSFMT LTTR LTTR LTTR LTTR LTTR (:at colors) TXT)))
@@ -214,7 +199,8 @@
 (define(systemctl cmd)
   (setq Z:timecounter Z:timelimit
         Z:tickcounter TICKLIMIT
-        N:tickcounter 0)
+        N:tickcounter 0
+        X:tickcounter 0)
   (when (and (:on? A:flag 1) (:on? A:flag 4))
     (post-outs)
     (setq A:tickcounter TICKLIMIT))
@@ -227,21 +213,22 @@
         (append "'snooZe: Close to " (:at Z:cycle) "!'"))
       (systemctl (:at Z:cycle)))))
 
-(define(remit , flag)
-  (timer 'remit BESIX)
-  (dolist (e TICKS)
-    (when (<= (-- e:tickcounter) 0)
-      (e:tick)
-      (setq e:tickcounter TICKLIMIT
-            flag (letterfactory e))))
-  (when flag (letters2polybar)))
+(define(ticker , flag)
+  (let (dv (date-value))
+    (when (<= BESIX (- dv before))
+      (setq before dv)
+      (dolist (e TICKS)
+        (when (<= (-- e:tickcounter) 0)
+          (e:tick)
+          (setq e:tickcounter TICKLIMIT
+                flag (letterfactory e))))
+      (when flag (letters2polybar)))))
 
 (define(post-outs)
   (let (
     lst (append (map
      (fn(a) (:nums a:flag)) LETTERS)
-     (list (:index P:cycle) (:value N:slider)
-           Z:timelimit (:index Z:cycle)))
+     (list (:index P:cycle) (:value N:slider) Z:timelimit (:index Z:cycle)))
     )
     (apply and (list
       (unless (write-file MEMOPATH (string M:memo))
@@ -456,18 +443,18 @@
         (catch (:command-wid ipc4cmd (lookup "window" bx)
           (append "floating "
             (if (:on? M:flag 1)
-              (cond
-                ((= '(true true true) it) "disable")
-                ((= '(true nil nil) it) "enable")
-                ((= '(nil true nil) it) "enable")
-                ((= '(nil nil nil) it) "enable")
-                (true (throw)))
-              (cond
-                ((= '(true true nil) it) "enable")
-                ((= '(true nil true) it) "disable")
-                ((= '(nil true true) it) "disable")
-                ((= '(nil nil true) it) "disable")
-                (true (throw)))))))))))
+              (if
+                (= '(true true true) it) "disable"
+                (= '(true nil nil) it) "enable"
+                (= '(nil true nil) it) "enable"
+                (= '(nil nil nil) it) "enable"
+                (throw))
+              (if
+                (= '(true true nil) it) "enable"
+                (= '(true nil true) it) "disable"
+                (= '(nil true true) it) "disable"
+                (= '(nil nil true) it) "disable"
+                (throw))))))))))
 
 (define(on-move bx)
   (unless (= (lookup "scratchpad_state" bx) "none")
@@ -477,17 +464,17 @@
     (when (ends-with (lookup "floating" vbox:vbox) "on")
       (:run xprop (lookup "window" vbox:vbox)))))
 
-(define(on-workspace-focus , rect)
+(define(on-workspace-focus)
   (setq drawer nil)
   (let (lst (json-parse (:getworkspaces ipc4cmd)))
     (dolist (e lst rect)
       (when (= (lookup "focused" e) true)
-        (setq rect (lookup "rect" e)
-              P:wrkspc_y (lookup "y" rect)
-              P:wrkspc_height (lookup "height" rect))))))
+        (let (rect (lookup "rect" e))
+          (setq P:wrkspc_y (lookup "y" rect)
+                P:wrkspc_height (lookup "height" rect)))))))
 
 ; main loop
-(local (flag data json lttr)
+(local (flag conn data json lttr)
   (map delete '(include isinPATH permutations require))
   (:subscribe ipc4sub {[ "window", "workspace" ]})
   (:run C:off)
@@ -498,16 +485,17 @@
   (N:tick)
   (when (:on? C:flag 1) (:run C:on))
   (when (:on? Z:flag 1) (:run Z:on))
-  (remit)
   (until flag
-    (until (net-select (:socket ipc4sub) "r" 35000)
-      (dolist (childpid (receive))
-        (receive childpid data)
-        (when (= childpid polybarpid)
-          (setq data (parse $it "_")
-                lttr (pop data)
-                flag (lettershop lttr data))
-          (when (letterfactory lttr) (letters2polybar)))))
+    (until (net-select (:socket ipc4sub) "r" 30000)
+      (ticker)
+      (when (net-select polybarsock "r" 5000)
+        (setq conn (net-accept polybarsock))
+        (net-receive conn data 256)
+        (net-close conn)
+        (setq data (parse $it "_")
+              lttr (pop data)
+              flag (lettershop lttr data))
+        (when (letterfactory lttr) (letters2polybar))))
     (setq json (json-parse (:receive ipc4sub)))
     (if (setq box:box (lookup "container" json))
       (case (lookup "change" json)

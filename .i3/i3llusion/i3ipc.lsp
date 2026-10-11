@@ -52,7 +52,6 @@
          lst (append (lookup "nodes" json) (lookup "floating_nodes" json))
          it (pop lst))
     (while it
-      (unless (= (lookup "layout" it) "dockarea")
-        (func it)
-        (extend lst (lookup "nodes" it) (lookup "floating_nodes" it)))
+      (func it)
+      (extend lst (lookup "nodes" it) (lookup "floating_nodes" it))
       (setq it (pop lst)))))
