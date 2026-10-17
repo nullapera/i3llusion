@@ -54,18 +54,19 @@
 (setq
   scratcheds '()
   before (date-value)
-  polybarsock (net-listen POLYBARSOCK)
+  polybarsock (unless (net-listen POLYBARSOCK)
+    (throw-error (append "No connection to: '" POLYBARSOCK "'")))
   ipc4cmd (i3ipc I3SOCK)
   ipc4sub (i3ipc I3SOCK)
   colors (letn (
-    hxa (explode "acff")
+    hxa (explode "accff")
     chr (char (apply max (map char hxa)))
     lst (permutations 3 hxa)
     idx 0
     )
     (seed (time-of-day))
     (setq lst (map (curry push "#") (map join $it))
-          lst (filter (curry find chr) $it)
+          lst (unique (filter (curry find chr) $it))
           idx (/ (length lst) 2))
     (Cycle (flat (map list (randomize (idx lst)) (randomize (0 idx lst))))))
   notify (Cmd {notify-send} "-u" "'** i3llusion **'")
