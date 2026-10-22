@@ -6,6 +6,7 @@
 ;;
 (silent)
 (set-locale "C" 1) ; decimal dot
+(seed (time-of-day))
 
 (require "isinPATH")
 (isinPATH true
@@ -33,20 +34,35 @@
 (require
   "Flag" "Cmd" "Cycle" "Slider" "permutations" "i3llusion/i3ipc")
 
-(letn (pth0 (append (real-path) "/i3llusion")
-       pth1 (append pth0 "-msg.lsp"))
+(letn (
+  pth0 (append (real-path) "/i3llusion")
+  pth1 (append pth0 "-msg.lsp")
+  fmt (append
+    "%%{A1:" pth1 " %s_1:}"
+    "%%{A2:" pth1 " %s_2:}"
+    "%%{A3:" pth1 " %s_3:}"
+    "%%{A4:" pth1 " %s_4:}"
+    "%%{A5:" pth1 " %s_5:}"
+    "%%{F")
+  mkr (lambda(a) (format fmt a a a a a))
+  )
   (constant
     'MEMOPATH (append pth0 "-memo.dat")
     'CONDPATH (append pth0 "-cond.dat")
     'PICOMPATH (append pth0 "-picom.conf")
-    'LETTERSFMT (append
-      "%%{A1:" pth1 " %s_1:}"
-      "%%{A2:" pth1 " %s_2:}"
-      "%%{A3:" pth1 " %s_3:}"
-      "%%{A4:" pth1 " %s_4:}"
-      "%%{A5:" pth1 " %s_5:}"
-      "%%{F%s} %s "
-      "%%{A}%%{A}%%{A}%%{A}%%{A}")
+    'HEAD_M (mkr "M")
+    'HEAD_P_a (mkr "P_a")
+    'HEAD_P_b (mkr "P_b")
+    'HEAD_N_a (mkr "N_a")
+    'HEAD_N_b (mkr "N_b")
+    'HEAD_C (mkr "C")
+    'HEAD_Z_a (mkr "Z_a")
+    'HEAD_Z_b (mkr "Z_b")
+    'HEAD_Z_c (mkr "Z_c")
+    'HEAD_Z_d (mkr "Z_d")
+    'HEAD_A_a (mkr "A_a")
+    'HEAD_A_b (mkr "A_b")
+    'HEAD_A_c (mkr "A_c")
     'WARNLIMIT 2
     'BESIX 6
     'TICKLIMIT (/ 3600 10 BESIX)))
@@ -58,17 +74,9 @@
     (throw-error (append "No connection to: '" POLYBARSOCK "'")))
   ipc4cmd (i3ipc I3SOCK)
   ipc4sub (i3ipc I3SOCK)
-  colors (letn (
-    hxa (explode "accff")
-    chr (char (apply max (map char hxa)))
-    lst (permutations 3 hxa)
-    idx 0
-    )
-    (seed (time-of-day))
-    (setq lst (map (curry push "#") (map join $it))
-          lst (unique (filter (curry find chr) $it))
-          idx (/ (length lst) 2))
-    (Cycle (flat (map list (randomize (idx lst)) (randomize (0 idx lst))))))
+  colors (Cycle (randomize (map
+    (fn(a) (push "#" (join a)))
+    (permutations 3 (explode "f4fa")))))
   notify (Cmd {notify-send} "-u" "'** i3llusion **'")
   xprop (Cmd {xprop}
     "-format I3_FLOATING_WINDOW 32c -set I3_FLOATING_WINDOW 1 -id"))
@@ -143,52 +151,50 @@
 (constant
   'LETTERS (list M P N C Z A) 'TICKS (list N Z A X))
 
-(macro(set-shape VAR LTTR TXT)
-  (setq VAR
-    (format LETTERSFMT LTTR LTTR LTTR LTTR LTTR (:at colors) TXT)))
+(macro(set-shape VAR HEAD TXT)
+  (setq VAR (append HEAD (:at colors) "} " TXT " %{A}%{A}%{A}%{A}%{A}")))
 
-(macro(add-shape VAR LTTR TXT)
-  (extend VAR
-    (format LETTERSFMT LTTR LTTR LTTR LTTR LTTR (:at colors) TXT)))
+(macro(add-shape VAR HEAD TXT)
+  (extend VAR (append HEAD (:at colors) "} " TXT " %{A}%{A}%{A}%{A}%{A}")))
 
 (define(letterfactory lttr)
   (:step colors 1)
   (cond
     ((or (= lttr "M") (= lttr M))
-      (set-shape M:msg "M" (M:texts (:to-int M:flag 1 3)))
+      (set-shape M:msg HEAD_M (M:texts (:to-int M:flag 1 3)))
       true)
     ((or (= lttr "P") (= lttr P))
-      (set-shape P:msg "P_a"
+      (set-shape P:msg HEAD_P_a
         (if (:on? P:flag 3) "Position:" (append "P" (first (:at P:cycle)))))
-      (when (:on? P:flag 3) (add-shape P:msg "P_b" (:at P:cycle)))
+      (when (:on? P:flag 3) (add-shape P:msg HEAD_P_b (:at P:cycle)))
       true)
     ((or (= lttr "N") (= lttr N))
-      (set-shape N:msg "N_a" (N:texts (:to-int N:flag '(0 1 3))))
+      (set-shape N:msg HEAD_N_a (N:texts (:to-int N:flag '(0 1 3))))
       (when (and (:on? N:flag 3) (:on? N:flag 1))
-        (add-shape N:msg "N_b" (string (:value N:slider) "K")))
+        (add-shape N:msg HEAD_N_b (string (:value N:slider) "K")))
       true)
     ((or (= lttr "C") (= lttr C))
-      (set-shape C:msg "C" (C:texts (:to-int C:flag '(1 3))))
+      (set-shape C:msg HEAD_C (C:texts (:to-int C:flag '(1 3))))
       true)
     ((or (= lttr "Z") (= lttr Z))
       (if (:on? Z:flag 3)
         (begin
-          (set-shape Z:msg "Z_a"
+          (set-shape Z:msg HEAD_Z_a
             (if (:on? Z:flag 1) "snooZe: lock" "snooZe: UNlock"))
-          (add-shape Z:msg "Z_b" (format {<  %.1fhrs} (div Z:timelimit 10)))
-          (add-shape Z:msg "Z_c" (append "<  " (:at Z:cycle))))
-        (set-shape Z:msg "Z_d"
+          (add-shape Z:msg HEAD_Z_b (format {<  %.1fhrs} (div Z:timelimit 10)))
+          (add-shape Z:msg HEAD_Z_c (append "<  " (:at Z:cycle))))
+        (set-shape Z:msg HEAD_Z_d
           (format (if (:on? Z:flag 1) {Z%.1f} {z%.1f})
                   (div Z:timecounter 10))))
       true)
     ((or (= lttr "A") (= lttr A))
       (if (:on? A:flag 3)
         (begin
-          (set-shape A:msg "A_a" (if (:on? A:flag 1) "Auto:" "Auto: Off"))
+          (set-shape A:msg HEAD_A_a (if (:on? A:flag 1) "Auto:" "Auto: Off"))
           (when (:on? A:flag 1)
-            (add-shape A:msg "A_b" (if (:on? A:flag 4) "SavE," "save,"))
-            (add-shape A:msg "A_c" (if (:on? A:flag 5) "MemO" "memo"))))
-        (set-shape A:msg "A_a" (A:texts (:to-int A:flag '(1 4 5)))))
+            (add-shape A:msg HEAD_A_b (if (:on? A:flag 4) "SavE," "save,"))
+            (add-shape A:msg HEAD_A_c (if (:on? A:flag 5) "MemO" "memo"))))
+        (set-shape A:msg HEAD_A_a (A:texts (:to-int A:flag '(1 4 5)))))
       true)
     (true nil)))
 
