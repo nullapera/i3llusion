@@ -63,6 +63,8 @@
     'HEAD_A_a (mkr "A_a")
     'HEAD_A_b (mkr "A_b")
     'HEAD_A_c (mkr "A_c")
+    'CURLY "} "
+    'TAIL " %{A}%{A}%{A}%{A}%{A}"
     'WARNLIMIT 2
     'BESIX 6
     'TICKLIMIT (/ 3600 10 BESIX)))
@@ -152,13 +154,12 @@
   'LETTERS (list M P N C Z A) 'TICKS (list N Z A X))
 
 (macro(set-shape VAR HEAD TXT)
-  (setq VAR (append HEAD (:at colors) "} " TXT " %{A}%{A}%{A}%{A}%{A}")))
+  (setq VAR (append HEAD color CURLY TXT TAIL)))
 
 (macro(add-shape VAR HEAD TXT)
-  (extend VAR (append HEAD (:at colors) "} " TXT " %{A}%{A}%{A}%{A}%{A}")))
+  (extend VAR (append HEAD color CURLY TXT TAIL)))
 
-(define(letterfactory lttr)
-  (:step colors 1)
+(define(letterfactory lttr , (color (:step colors 1)))
   (cond
     ((or (= lttr "M") (= lttr M))
       (set-shape M:msg HEAD_M (M:texts (:to-int M:flag 1 3)))
@@ -221,16 +222,15 @@
         (append "'snooZe: Close to " (:at Z:cycle) "!'"))
       (systemctl (:at Z:cycle)))))
 
-(define(ticker , flag)
-  (let (dv (date-value))
-    (when (<= BESIX (- dv before))
-      (setq before dv)
-      (dolist (e TICKS)
-        (when (<= (-- e:tickcounter) 0)
-          (e:tick)
-          (setq e:tickcounter TICKLIMIT
-                flag (letterfactory e))))
-      (when flag (letters2polybar)))))
+(define(ticker , flag (dv (date-value)))
+  (when (<= BESIX (- dv before))
+    (setq before dv)
+    (dolist (e TICKS)
+      (when (<= (-- e:tickcounter) 0)
+        (e:tick)
+        (setq e:tickcounter TICKLIMIT
+              flag (letterfactory e))))
+    (when flag (letters2polybar))))
 
 (define(post-outs)
   (let (
@@ -423,46 +423,44 @@
           (:run Z:on)
           (setq Z:fullscreen_mode 0))))))
 
-(define(on-floating bx)
+(define(on-floating bx , (wt (lookup "window_type" bx)))
   (setq drawer bx)
-  (let (wt (lookup "window_type" bx))
-    (if (or (= wt "normal") (= wt "unknown"))
-      (:command-wid ipc4cmd (lookup "window" bx)
-        (if (ends-with (lookup "floating" bx) "on")
-          (append "border pixel 6, " (go2position))
-          "border none"))
-      (when (and (= (:at P:cycle) "upside")
-                 (ends-with (lookup "floating" bx) "on"))
-        (:command-wid ipc4cmd (lookup "window" bx) (go2position 0.1))))))
+  (if (or (= wt "normal") (= wt "unknown"))
+    (:command-wid ipc4cmd (lookup "window" bx)
+      (if (ends-with (lookup "floating" bx) "on")
+        (append "border pixel 6, " (go2position))
+        "border none"))
+    (when (and (= (:at P:cycle) "upside")
+                (ends-with (lookup "floating" bx) "on"))
+      (:command-wid ipc4cmd (lookup "window" bx) (go2position 0.1)))))
 
-(define(on-new bx)
-  (let (wt (lookup "window_type" bx))
-    (when (or (= wt "normal") (= wt "unknown"))
-      (letn (
-        wp (lookup "window_properties" bx)
-        idx (find (list (lookup "class" wp)
-                        (lookup "instance" wp)
-                        (:on? M:flag 1))
-                  M:memo)
-        it (list (:on? M:flag 2)
-                 (number? idx)
-                 (ends-with (lookup "floating" bx) "on"))
-        )
-        (catch (:command-wid ipc4cmd (lookup "window" bx)
-          (append "floating "
-            (if (:on? M:flag 1)
-              (if
-                (= '(true true true) it) "disable"
-                (= '(true nil nil) it) "enable"
-                (= '(nil true nil) it) "enable"
-                (= '(nil nil nil) it) "enable"
-                (throw))
-              (if
-                (= '(true true nil) it) "enable"
-                (= '(true nil true) it) "disable"
-                (= '(nil true true) it) "disable"
-                (= '(nil nil true) it) "disable"
-                (throw))))))))))
+(define(on-new bx , (wt (lookup "window_type" bx)))
+  (when (or (= wt "normal") (= wt "unknown"))
+    (letn (
+      wp (lookup "window_properties" bx)
+      idx (find (list (lookup "class" wp)
+                      (lookup "instance" wp)
+                      (:on? M:flag 1))
+                M:memo)
+      it (list (:on? M:flag 2)
+                (number? idx)
+                (ends-with (lookup "floating" bx) "on"))
+      )
+      (catch (:command-wid ipc4cmd (lookup "window" bx)
+        (append "floating "
+          (if (:on? M:flag 1)
+            (if
+              (= '(true true true) it) "disable"
+              (= '(true nil nil) it) "enable"
+              (= '(nil true nil) it) "enable"
+              (= '(nil nil nil) it) "enable"
+              (throw))
+            (if
+              (= '(true true nil) it) "enable"
+              (= '(true nil true) it) "disable"
+              (= '(nil true true) it) "disable"
+              (= '(nil nil true) it) "disable"
+              (throw)))))))))
 
 (define(on-move bx)
   (unless (= (lookup "scratchpad_state" bx) "none")
@@ -474,12 +472,13 @@
 
 (define(on-workspace-focus)
   (setq drawer nil)
-  (let (lst (json-parse (:getworkspaces ipc4cmd)))
+  (let (lst (json-parse (:getworkspaces ipc4cmd))
+        rect nil)
     (dolist (e lst rect)
       (when (= (lookup "focused" e) true)
-        (let (rect (lookup "rect" e))
-          (setq P:wrkspc_y (lookup "y" rect)
-                P:wrkspc_height (lookup "height" rect)))))))
+        (setq rect (lookup "rect" e)
+              P:wrkspc_y (lookup "y" rect)
+              P:wrkspc_height (lookup "height" rect))))))
 
 ; main loop
 (local (flag conn data json lttr)
