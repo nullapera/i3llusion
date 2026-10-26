@@ -44,30 +44,21 @@
     "%%{A4:" pth1 " %s_4:}"
     "%%{A5:" pth1 " %s_5:}"
     "%%{F")
-  mkr (lambda(a) (format fmt a a a a a))
+  lst '("M" "P_a" "P_b" "N_a" "N_b" "C"
+        "Z_a" "Z_b" "Z_c" "Z_d" "A_a" "A_b" "A_c")
   )
   (constant
     'MEMOPATH (append pth0 "-memo.dat")
     'CONDPATH (append pth0 "-cond.dat")
     'PICOMPATH (append pth0 "-picom.conf")
-    'HEAD_M (mkr "M")
-    'HEAD_P_a (mkr "P_a")
-    'HEAD_P_b (mkr "P_b")
-    'HEAD_N_a (mkr "N_a")
-    'HEAD_N_b (mkr "N_b")
-    'HEAD_C (mkr "C")
-    'HEAD_Z_a (mkr "Z_a")
-    'HEAD_Z_b (mkr "Z_b")
-    'HEAD_Z_c (mkr "Z_c")
-    'HEAD_Z_d (mkr "Z_d")
-    'HEAD_A_a (mkr "A_a")
-    'HEAD_A_b (mkr "A_b")
-    'HEAD_A_c (mkr "A_c")
     'CURLY "} "
     'TAIL " %{A}%{A}%{A}%{A}%{A}"
     'WARNLIMIT 2
     'BESIX 6
-    'TICKLIMIT (/ 3600 10 BESIX)))
+    'TICKLIMIT (/ 3600 10 BESIX))
+  (dolist (e lst)
+    (constant (sym (append "[" e "]"))
+              (format fmt e e e e e))))
 
 (setq
   scratcheds '()
@@ -87,7 +78,6 @@
   M:flag (Flag 4 '(0 1 1))
   M:cycle (Cycle '((0 0 0 1) (0 0 1 1) (0 1 0 1) (0 1 1 1)))
   M:memo '()
-  M:msg ""
   M:texts '(
     "m" "Mode: UnFloating"
     "m+" "Mode: UnFloatingMemo"
@@ -98,8 +88,7 @@
   P:flag (Flag 4)
   P:cycle (Cycle '("center" "mouse" "upside"))
   P:wrkspc_y 0
-  P:wrkspc_height 0
-  P:msg "")
+  P:wrkspc_height 0)
 
 (setq ; N: Nightlight
   N:flag (Flag 4 '(0 1))
@@ -109,7 +98,6 @@
   N:slider (Slider 6400 2400 6400 50)
   N:tick (lambda() (when (and (:on? N:flag 1) (:off? N:flag 0)) (kelvinize)))
   N:tickcounter TICKLIMIT
-  N:msg ""
   N:texts '(
     "n" "Nightlight: Off"
     "N" "Nightlight:"
@@ -120,7 +108,6 @@
   C:flag (Flag 4 '(0 1))
   C:on (Cmd {picom} "-b --config" PICOMPATH)
   C:off (Cmd {pkill} "picom")
-  C:msg ""
   C:texts '("c" "Compositor: Off" "C" "Compositor: On"))
 
 (setq ; Z: snooZe
@@ -133,14 +120,12 @@
   Z:tickcounter TICKLIMIT
   Z:fullscreen_mode 0
   Z:timelimit 80
-  Z:timecounter Z:timelimit
-  Z:msg "")
+  Z:timecounter Z:timelimit)
 
 (setq ; A: Automate
   A:flag (Flag 6 '(0 1 0 0 1 1))
   A:tickcounter TICKLIMIT
   A:tick (lambda() (when (and (:on? A:flag 1) (:on? A:flag 4)) (post-outs)))
-  A:msg ""
   A:texts '("a" "a" "a" "a" "Asm" "AsM" "ASm" "ASM"))
 
 (setq ; X: eXtra
@@ -150,57 +135,61 @@
     (letters2polybar))
   X:tickcounter TICKLIMIT)
 
-(constant
-  'LETTERS (list M P N C Z A) 'TICKS (list N Z A X))
+(let (lst (list M P N C Z A))
+  (constant
+    'LETTERS lst 'TICKS (list N Z A X))
+  (dolist (e lst)
+    (setq e:idx $idx)
+    (push nil msgs)))
 
-(macro(set-shape VAR HEAD TXT)
-  (setq VAR (append HEAD color CURLY TXT TAIL)))
+(macro(set-shape IDX HEAD TXT)
+  (setf (msgs IDX) (append HEAD color CURLY TXT TAIL)))
 
-(macro(add-shape VAR HEAD TXT)
-  (extend VAR (append HEAD color CURLY TXT TAIL)))
+(macro(add-shape IDX HEAD TXT)
+  (extend (msgs IDX) (append HEAD color CURLY TXT TAIL)))
 
 (define(letterfactory lttr , (color (:step colors 1)))
   (cond
     ((or (= lttr "M") (= lttr M))
-      (set-shape M:msg HEAD_M (M:texts (:to-int M:flag 1 3)))
+      (set-shape M:idx [M] (M:texts (:to-int M:flag 1 3)))
       true)
     ((or (= lttr "P") (= lttr P))
-      (set-shape P:msg HEAD_P_a
+      (set-shape P:idx [P_a]
         (if (:on? P:flag 3) "Position:" (append "P" (first (:at P:cycle)))))
-      (when (:on? P:flag 3) (add-shape P:msg HEAD_P_b (:at P:cycle)))
+      (when (:on? P:flag 3) (add-shape P:idx [P_b] (:at P:cycle)))
       true)
     ((or (= lttr "N") (= lttr N))
-      (set-shape N:msg HEAD_N_a (N:texts (:to-int N:flag '(0 1 3))))
+      (set-shape N:idx [N_a] (N:texts (:to-int N:flag '(0 1 3))))
       (when (and (:on? N:flag 3) (:on? N:flag 1))
-        (add-shape N:msg HEAD_N_b (string (:value N:slider) "K")))
+        (add-shape N:idx [N_b] (string (:value N:slider) "K")))
       true)
     ((or (= lttr "C") (= lttr C))
-      (set-shape C:msg HEAD_C (C:texts (:to-int C:flag '(1 3))))
+      (set-shape C:idx [C] (C:texts (:to-int C:flag '(1 3))))
       true)
     ((or (= lttr "Z") (= lttr Z))
       (if (:on? Z:flag 3)
         (begin
-          (set-shape Z:msg HEAD_Z_a
+          (set-shape Z:idx [Z_a]
             (if (:on? Z:flag 1) "snooZe: lock" "snooZe: UNlock"))
-          (add-shape Z:msg HEAD_Z_b (format {<  %.1fhrs} (div Z:timelimit 10)))
-          (add-shape Z:msg HEAD_Z_c (append "<  " (:at Z:cycle))))
-        (set-shape Z:msg HEAD_Z_d
+          (add-shape Z:idx [Z_b] (format {<  %.1fhrs} (div Z:timelimit 10)))
+          (add-shape Z:idx [Z_c] (append "<  " (:at Z:cycle))))
+        (set-shape Z:idx [Z_d]
           (format (if (:on? Z:flag 1) {Z%.1f} {z%.1f})
                   (div Z:timecounter 10))))
       true)
     ((or (= lttr "A") (= lttr A))
       (if (:on? A:flag 3)
         (begin
-          (set-shape A:msg HEAD_A_a (if (:on? A:flag 1) "Auto:" "Auto: Off"))
+          (set-shape A:idx [A_a] (if (:on? A:flag 1) "Auto:" "Auto: Off"))
           (when (:on? A:flag 1)
-            (add-shape A:msg HEAD_A_b (if (:on? A:flag 4) "SavE," "save,"))
-            (add-shape A:msg HEAD_A_c (if (:on? A:flag 5) "MemO" "memo"))))
-        (set-shape A:msg HEAD_A_a (A:texts (:to-int A:flag '(1 4 5)))))
+            (add-shape A:idx [A_b] (if (:on? A:flag 4) "SavE," "save,"))
+            (add-shape A:idx [A_c] (if (:on? A:flag 5) "MemO" "memo"))))
+        (set-shape A:idx [A_a] (A:texts (:to-int A:flag '(1 4 5)))))
       true)
     (true nil)))
 
 (define(letters2polybar)
-  (write-line 1 (join (map (fn(a) a:msg) LETTERS))))
+  (write-line 1 (join msgs)))
 
 (define(kelvinize)
   (:value! N:slider (int ((parse ((:run N:on) -2)) -2))))
@@ -232,21 +221,20 @@
               flag (letterfactory e))))
     (when flag (letters2polybar))))
 
-(define(post-outs)
-  (let (
-    lst (append (map
-     (fn(a) (:nums a:flag)) LETTERS)
-     (list (:index P:cycle) (:value N:slider) Z:timelimit (:index Z:cycle)))
-    )
-    (apply and (list
-      (unless (write-file MEMOPATH (string M:memo))
-        (:run notify {critical}
-          (append "'post-outs: Can not write to " MEMOPATH "!'"))
-        nil)
-      (unless (write-file CONDPATH (join (map string lst) "\n"))
-        (:run notify {critical}
-          (append "'post-outs: Can not write to " CONDPATH "!'"))
-        nil)))))
+(define(post-outs ,
+  (lst (append (map
+    (fn(a) (:nums a:flag)) LETTERS)
+    (list (:index P:cycle) (:value N:slider) Z:timelimit (:index Z:cycle))))
+  )
+  (apply and (list
+    (unless (write-file MEMOPATH (string M:memo))
+      (:run notify {critical}
+        (append "'post-outs: Can not write to " MEMOPATH "!'"))
+      nil)
+    (unless (write-file CONDPATH (join (map string lst) "\n"))
+      (:run notify {critical}
+        (append "'post-outs: Can not write to " CONDPATH "!'"))
+      nil))))
 
 (define(post-ins)
   (when (file? MEMOPATH)
@@ -443,8 +431,8 @@
                       (:on? M:flag 1))
                 M:memo)
       it (list (:on? M:flag 2)
-                (number? idx)
-                (ends-with (lookup "floating" bx) "on"))
+               (number? idx)
+               (ends-with (lookup "floating" bx) "on"))
       )
       (catch (:command-wid ipc4cmd (lookup "window" bx)
         (append "floating "
@@ -470,15 +458,15 @@
     (when (ends-with (lookup "floating" vbox:vbox) "on")
       (:run xprop (lookup "window" vbox:vbox)))))
 
-(define(on-workspace-focus)
+(define(on-workspace-focus , rect
+  (lst (json-parse (:getworkspaces ipc4cmd)))
+  )
   (setq drawer nil)
-  (let (lst (json-parse (:getworkspaces ipc4cmd))
-        rect nil)
-    (dolist (e lst rect)
-      (when (= (lookup "focused" e) true)
-        (setq rect (lookup "rect" e)
-              P:wrkspc_y (lookup "y" rect)
-              P:wrkspc_height (lookup "height" rect))))))
+  (dolist (e lst rect)
+    (when (= (lookup "focused" e) true)
+      (setq rect (lookup "rect" e)
+            P:wrkspc_y (lookup "y" rect)
+            P:wrkspc_height (lookup "height" rect)))))
 
 ; main loop
 (local (flag conn data json lttr)
@@ -488,8 +476,8 @@
   (:run Z:off)
   (on-workspace-focus)
   (post-ins)
-  (X:tick)
   (N:tick)
+  (X:tick)
   (when (:on? C:flag 1) (:run C:on))
   (when (:on? Z:flag 1) (:run Z:on))
   (until flag
